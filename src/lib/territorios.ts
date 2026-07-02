@@ -39,3 +39,8 @@ export async function setAtivo(id: string, ativo: boolean): Promise<void> {
   const { error } = await supabase.from("territorio").update({ ativo }).eq("id", id);
   if (error) throw error;
 }
+
+export async function excluirTerritorio(id: string): Promise<void> {
+  const { error } = await supabase.from("territorio").delete().eq("id", id);
+  if (error) throw error; // 23503 = território tem designação; tratado na UI
+}

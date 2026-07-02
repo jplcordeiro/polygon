@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { listTerritorios, setAtivo, statusTerritorio } from "../lib/territorios";
+import { listTerritorios, setAtivo, statusTerritorio, excluirTerritorio } from "../lib/territorios";
 import { listPublicadores, criarPublicador } from "../lib/publicadores";
 import { designacoesAbertas, designar, devolver } from "../lib/designacoes";
 import type { Territorio, Publicador, Designacao } from "../lib/types";
@@ -36,6 +36,21 @@ export function Gestao() {
     setNovoNome("");
     setNovoTel("");
     carregar();
+  }
+
+  async function excluir(t: Territorio) {
+    if (!window.confirm(`Excluir o território Nº ${t.numero}? Esta ação não pode ser desfeita.`))
+      return;
+    try {
+      await excluirTerritorio(t.id);
+      carregar();
+    } catch (err) {
+      if ((err as { code?: string }).code === "23503") {
+        alert("Não é possível excluir: este território tem histórico de designações.");
+      } else {
+        alert("Não foi possível excluir o território. Tente novamente.");
+      }
+    }
   }
 
   return (
@@ -113,6 +128,12 @@ export function Gestao() {
                       />{" "}
                       ativo
                     </label>
+                    <button
+                      style={{ marginLeft: 8 }}
+                      onClick={() => excluir(t)}
+                    >
+                      Excluir
+                    </button>
                   </td>
                 </tr>
               );
