@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import { useControl } from "react-map-gl/mapbox";
 import { BaseMap } from "../map/BaseMap";
+import type { ViewState } from "../map/BaseMap";
 import { criarTerritorio } from "../lib/territorios";
 
 // Registra o mapbox-gl-draw como controle do mapa e reporta o polígono desenhado.
@@ -36,7 +37,29 @@ export function Cadastro() {
   const [nome, setNome] = useState("");
   const [polygon, setPolygon] = useState<GeoJSON.Polygon | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [inicial, setInicial] = useState<ViewState | undefined>(undefined);
+  const [mapaPronto, setMapaPronto] = useState(false);
   const onChange = useCallback((p: GeoJSON.Polygon | null) => setPolygon(p), []);
+
+  // Centraliza o mapa na localização do usuário ao abrir a tela de cadastro.
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setMapaPronto(true);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setInicial({
+          longitude: pos.coords.longitude,
+          latitude: pos.coords.latitude,
+          zoom: 16,
+        });
+        setMapaPronto(true);
+      },
+      () => setMapaPronto(true), // permissão negada / erro → usa o padrão
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  }, []);
 
   async function salvar() {
     if (!numero || !polygon) return;
@@ -76,9 +99,15 @@ export function Cadastro() {
           Salvar
         </button>
       </div>
-      <BaseMap>
-        <DrawControl onChange={onChange} />
-      </BaseMap>
+      {mapaPronto ? (
+        <BaseMap showLocation initialViewState={inicial}>
+          <DrawControl onChange={onChange} />
+        </BaseMap>
+      ) : (
+        <div style={{ display: "grid", placeItems: "center", height: "100%" }}>
+          Obtendo sua localização…
+        </div>
+      )}
     </div>
   );
 }
