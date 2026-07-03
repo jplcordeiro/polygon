@@ -4,6 +4,8 @@ import { listTerritorios, setAtivo, statusTerritorio, excluirTerritorio } from "
 import { listPublicadores, criarPublicador } from "../lib/publicadores";
 import { designacoesAbertas, designar, devolver } from "../lib/designacoes";
 import type { Territorio, Publicador, Designacao } from "../lib/types";
+import { LogOut } from "lucide-react";
+import { supabase } from "../lib/supabase";
 import { TerritorioGlyph } from "./TerritorioGlyph";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,20 +135,31 @@ export function Gestao() {
             </p>
           </div>
         </div>
-        <dl className="flex gap-[22px]">
-          <div className="grid gap-px text-right">
-            <dt className={dt}>Territórios</dt>
-            <dd className={`${ddBase} text-ink`}>{territorios.length}</dd>
-          </div>
-          <div className="grid gap-px text-right">
-            <dt className={dt}>Disponíveis</dt>
-            <dd className={`${ddBase} text-sage`}>{disponiveis}</dd>
-          </div>
-          <div className="grid gap-px text-right">
-            <dt className={dt}>Designados</dt>
-            <dd className={`${ddBase} text-jwblue`}>{designados}</dd>
-          </div>
-        </dl>
+        <div className="flex flex-col items-end gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => supabase.auth.signOut()}
+            className="text-ink-soft hover:text-jwblue"
+          >
+            <LogOut aria-hidden="true" />
+            Sair
+          </Button>
+          <dl className="flex gap-[22px]">
+            <div className="grid gap-px text-right">
+              <dt className={dt}>Territórios</dt>
+              <dd className={`${ddBase} text-ink`}>{territorios.length}</dd>
+            </div>
+            <div className="grid gap-px text-right">
+              <dt className={dt}>Disponíveis</dt>
+              <dd className={`${ddBase} text-sage`}>{disponiveis}</dd>
+            </div>
+            <div className="grid gap-px text-right">
+              <dt className={dt}>Designados</dt>
+              <dd className={`${ddBase} text-jwblue`}>{designados}</dd>
+            </div>
+          </dl>
+        </div>
       </header>
 
       <section className="grid gap-4">
