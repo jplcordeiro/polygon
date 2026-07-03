@@ -13,7 +13,7 @@ Design and plan docs live in `docs/`:
 
 ## Commands
 
-- **Dev server:** `npm run dev` (localhost). For testing on a phone with real GPS: `npm run dev -- --host` — serves HTTPS (self-signed via `@vitejs/plugin-basic-ssl`) on the LAN, which the browser requires to grant geolocation off-localhost.
+- **Dev server:** `npm run dev` (localhost, fixed port 3000 via `strictPort`). For testing on a phone with real GPS: `npm run dev -- --host` — serves HTTPS (self-signed via `@vitejs/plugin-basic-ssl`) on the LAN, which the browser requires to grant geolocation off-localhost.
 - **Build (typecheck + bundle):** `npm run build` (`tsc -b && vite build`).
 - **Tests:** `npm run test` (Vitest, run mode).
 - **Single test file:** `npx vitest run src/lib/territorios.test.ts`
@@ -24,17 +24,26 @@ Design and plan docs live in `docs/`:
 
 React 19 + TypeScript + Vite SPA (PWA via `vite-plugin-pwa`) talking **directly** to Supabase — there is no backend server. Access control is enforced by Postgres RLS, not application code.
 
-- **`src/lib/`** — the only place that touches Supabase. `supabase.ts` is the client singleton (reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`). `types.ts` holds the domain types. `territorios.ts` / `publicadores.ts` / `designacoes.ts` are the typed data layer; UI never calls `supabase` directly. `statusTerritorio()` in `territorios.ts` is a pure function — territory state is **derived**, never stored.
+- **`src/lib/`** — the only place that touches Supabase. `supabase.ts` is the client singleton (reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`). `types.ts` holds the domain types. `territorios.ts` / `publicadores.ts` / `designacoes.ts` are the typed data layer; UI never calls `supabase` directly. `statusTerritorio()` in `territorios.ts` is a pure function — territory state is **derived**, never stored. `utils.ts` exports the shadcn `cn()` helper (clsx + tailwind-merge).
 - **`src/auth/`** — single-user gate. `useSession` tracks the Supabase session; `App` renders `<Login>` until authenticated. RLS: `authenticated` = full access, `anon` = none.
 - **`src/map/`** — `BaseMap` wraps Mapbox GL (`react-map-gl@8`, imported from **`react-map-gl/mapbox`**); `showLocation` mounts the `GeolocateControl` for the live "you are here". `TerritorioPolygon` renders a boundary from a GeoJSON polygon.
-- **`src/screens/`** — `Cadastro` (draw polygon with `@mapbox/mapbox-gl-draw`, read via `draw.*` events, save GeoJSON), `Gestao` (status list + publicadores + designar/devolver), `Campo` (boundary + live position). Routes wired in `App.tsx` behind the auth gate.
+- **`src/screens/`** — `Cadastro` (draw polygon with `@mapbox/mapbox-gl-draw`, read via `draw.*` events, save GeoJSON), `Gestao` (status list + publicadores + designar/devolver + excluir território), `Campo` (boundary + live position). `TerritorioGlyph` renders a território's boundary as a small normalized SVG "seal" for recognition (dashed placeholder when no polygon). Routes wired in `App.tsx` behind the auth gate.
 - **`supabase/migrations/0001_init.sql`** — the schema. The Supabase MCP is **read-only**; schema changes are applied by a human running the SQL in the Supabase SQL Editor, then committed here.
+
+## UI & styling
+
+- **Tailwind CSS v4** via the `@tailwindcss/vite` plugin — no `tailwind.config.js`; all config lives in `src/index.css` using `@import "tailwindcss"`, `@theme`, and `@layer`. `tw-animate-css` provides animation utilities.
+- **shadcn/ui** components in `src/components/ui/` (`components.json`: new-york style, `rsc: false`, lucide icons, Radix primitives via the `radix-ui` package). Add components with the shadcn CLI; they land here and use `cn()` from `@/lib/utils`.
+- **Design tokens** in `src/index.css` — a jw.org-derived, desaturated palette (`--color-jwblue`, `--color-sage`, `--color-ink`, `--color-paper`, `--color-danger`, …) exposed as Tailwind color utilities via `@theme`, plus shadcn semantic tokens (`--primary`, `--destructive`, …) mapped onto that palette. Light-only (`color-scheme: light`). Theme color `#33507d` also drives the PWA manifest.
+- **Toasts:** `sonner` — `<Toaster richColors position="top-center">` is mounted once in `main.tsx`.
+- **Path alias:** `@` → `./src` (configured in both `vite.config.ts` and `tsconfig`).
 
 ## Domain rules that shape the schema
 
 - **One open assignment per territory**, enforced by a partial unique index: `unique(territorio_id) where data_devolucao is null`. A publisher may hold many territories.
 - **Derived state (never stored):** availability = `ativo` AND no open `designacao`; "last worked" = latest `data_devolucao`; assignment open = `data_devolucao is null`. The only stored admin flag is `territorio.ativo` ("don't assign for now").
 - Territory boundaries are **GeoJSON polygons in a `jsonb` column** — no PostGIS.
+- **Deleting a território** (`excluirTerritorio`) is blocked by the `designacao` FK: the DB raises Postgres error `23503` when any assignment references it, and the UI translates that into a "has assignments" message rather than deleting the history.
 
 ## Out of scope (deliberately deferred)
 
