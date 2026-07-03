@@ -76,7 +76,7 @@ export function Login() {
             {erro}
           </p>
 
-          <Button type="submit" size="lg" disabled={entrando}>
+          <Button type="submit" size="lg" disabled={entrando} className="cursor-pointer">
             {entrando ? "Entrando…" : "Entrar"}
           </Button>
         </form>
