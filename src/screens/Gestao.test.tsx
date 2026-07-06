@@ -16,11 +16,13 @@ vi.mock("../lib/territorios", async (orig) => {
 vi.mock("../lib/publicadores", () => ({
   listPublicadores: vi.fn().mockResolvedValue([]),
   criarPublicador: vi.fn(),
+  excluirPublicador: vi.fn(),
 }));
 vi.mock("../lib/designacoes", () => ({
   designacoesAbertas: vi.fn().mockResolvedValue([]),
   designar: vi.fn(),
   devolver: vi.fn(),
+  contagemPorPublicador: vi.fn().mockResolvedValue({}),
 }));
 
 describe("Gestao", () => {
