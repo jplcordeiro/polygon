@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { LocatorSeal } from "@/components/LocatorSeal";
 export function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [entrando, setEntrando] = useState(false);
 
@@ -58,15 +60,31 @@ export function Login() {
             <label htmlFor="senha" className="text-sm font-medium text-ink">
               Senha
             </label>
-            <Input
-              id="senha"
-              type="password"
-              autoComplete="current-password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              aria-invalid={erro != null}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="senha"
+                type={mostrarSenha ? "text" : "password"}
+                autoComplete="current-password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                aria-invalid={erro != null}
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarSenha((v) => !v)}
+                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                aria-pressed={mostrarSenha}
+                className="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-ink-soft transition-colors hover:text-ink"
+              >
+                {mostrarSenha ? (
+                  <Eye className="size-4" />
+                ) : (
+                  <EyeOff className="size-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <p
