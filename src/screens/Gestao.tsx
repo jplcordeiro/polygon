@@ -49,18 +49,16 @@ const STATUS_LABEL = {
   inativo: "Inativo",
 } as const;
 
-// "2026-07-02" -> "02/07/2026" (avoids Date() timezone shifts on date-only strings)
 function formatData(iso: string) {
   const [y, m, d] = iso.split("-");
   return d && m && y ? `${d}/${m}/${y}` : iso;
 }
 
-// "11912345678" -> "(11) 91234-5678"; "1132145678" -> "(11) 3214-5678"
 function formatTelefone(tel: string) {
   const d = tel.replace(/\D/g, "");
   if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return tel; // formato inesperado: mostra como está
+  return tel;
 }
 
 export function Gestao() {
@@ -85,7 +83,6 @@ export function Gestao() {
     setContagemPub(c);
   }
   useEffect(() => {
-    // só o carregamento inicial mostra o skeleton; recargas após ações não
     carregar().finally(() => setCarregando(false));
   }, []);
 
@@ -201,9 +198,14 @@ export function Gestao() {
           <h2 className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-ink-soft">
             Territórios
           </h2>
-          <Button asChild>
-            <Link to="/cadastro">Cadastrar território</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link to="/mapa">Mapa da congregação</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/cadastro">Cadastrar território</Link>
+            </Button>
+          </div>
         </div>
 
         {carregando ? (

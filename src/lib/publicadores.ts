@@ -25,5 +25,5 @@ export async function criarPublicador(input: {
 
 export async function excluirPublicador(id: string): Promise<void> {
   const { error } = await supabase.from("publicador").delete().eq("id", id);
-  if (error) throw error; // 23503 = publicador tem designação; tratado na UI
+  if (error) throw error;
 }

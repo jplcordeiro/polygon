@@ -4,11 +4,9 @@ import { Login } from "./auth/Login";
 import { Gestao } from "./screens/Gestao";
 import { Cadastro } from "./screens/Cadastro";
 import { Campo } from "./screens/Campo";
+import { Mapa } from "./screens/Mapa";
 import { LocatorSeal } from "./components/LocatorSeal";
 
-// Splash da inicialização: enquanto a sessão é verificada. Reusa o mesmo bloco
-// de identidade do Login (selo + wordmark) para que a tela se dissolva sem
-// saltos quando o Login aparece; o traço percorrendo o contorno é o "plotando".
 function AppBoot() {
   return (
     <main
@@ -37,6 +35,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Gestao />} />
       <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/mapa" element={<Mapa />} />
       <Route path="/campo/:id" element={<Campo />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

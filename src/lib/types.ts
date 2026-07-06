@@ -18,7 +18,7 @@ export interface Designacao {
   id: string;
   territorio_id: string;
   publicador_id: string;
-  data_saida: string; // ISO date (YYYY-MM-DD)
+  data_saida: string;
   data_devolucao: string | null;
   created_at: string;
 }

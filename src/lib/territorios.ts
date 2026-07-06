@@ -12,6 +12,30 @@ export function statusTerritorio(
   return "disponivel";
 }
 
+export type Bounds = [[number, number], [number, number]];
+
+export function boundsDeTerritorios(territorios: Territorio[]): Bounds | null {
+  let minLng = Infinity,
+    minLat = Infinity,
+    maxLng = -Infinity,
+    maxLat = -Infinity;
+  for (const t of territorios) {
+    const ring = t.limites?.coordinates?.[0];
+    if (!ring?.length) continue;
+    for (const [lng, lat] of ring) {
+      if (lng < minLng) minLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lng > maxLng) maxLng = lng;
+      if (lat > maxLat) maxLat = lat;
+    }
+  }
+  if (minLng === Infinity) return null;
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat],
+  ];
+}
+
 export async function listTerritorios(): Promise<Territorio[]> {
   const { data, error } = await supabase
     .from("territorio")
@@ -42,5 +66,5 @@ export async function setAtivo(id: string, ativo: boolean): Promise<void> {
 
 export async function excluirTerritorio(id: string): Promise<void> {
   const { error } = await supabase.from("territorio").delete().eq("id", id);
-  if (error) throw error; // 23503 = território tem designação; tratado na UI
+  if (error) throw error;
 }

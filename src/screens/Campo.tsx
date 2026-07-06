@@ -7,8 +7,8 @@ import { TerritorioPolygon } from "../map/TerritorioPolygon";
 import { listTerritorios } from "../lib/territorios";
 import type { Territorio } from "../lib/types";
 import { Button } from "@/components/ui/button";
+import { RadarLoader } from "../components/RadarLoader";
 
-// Centro do polígono (média dos vértices do anel externo) para enquadrar o mapa.
 function centro(p: GeoJSON.Polygon): ViewState | null {
   const ring = p.coordinates?.[0];
   if (!ring?.length) return null;
@@ -17,44 +17,6 @@ function centro(p: GeoJSON.Polygon): ViewState | null {
     [0, 0],
   );
   return { longitude: sx / ring.length, latitude: sy / ring.length, zoom: 15 };
-}
-
-// Selo do território com pulso "você está aqui" — o mesmo vocabulário visual
-// do Login (.locator-ping) e do header da Gestão, agora como estado de carga.
-function CampoLoader() {
-  return (
-    <div className="grid h-[100dvh] place-items-center bg-paper">
-      <div className="flex flex-col items-center gap-5" role="status">
-        <svg
-          className="h-16 w-16 text-jwblue"
-          viewBox="0 0 100 100"
-          fill="none"
-          aria-hidden="true"
-        >
-          {/* anéis de radar emanando do centro do plot */}
-          <circle cx="50" cy="51" r="20" className="locator-ping fill-jwblue/25" />
-          <circle
-            cx="50"
-            cy="51"
-            r="20"
-            className="locator-ping locator-ping--lag fill-jwblue/25"
-          />
-          {/* contorno do território (o "selo" do plot) */}
-          <path
-            d="M20 34 L50 20 L80 34 L80 68 L50 82 L20 68 Z"
-            stroke="currentColor"
-            strokeWidth="6"
-            strokeLinejoin="round"
-          />
-          {/* você está aqui */}
-          <circle cx="50" cy="51" r="5.5" fill="currentColor" />
-        </svg>
-        <p className="text-[0.9rem] tracking-[0.01em] text-ink-soft">
-          Abrindo o território…
-        </p>
-      </div>
-    </div>
-  );
 }
 
 export function Campo() {
@@ -69,7 +31,7 @@ export function Campo() {
       .finally(() => setCarregando(false));
   }, [id]);
 
-  if (carregando) return <CampoLoader />;
+  if (carregando) return <RadarLoader texto="Abrindo o território…" />;
   if (!t)
     return (
       <div className="grid h-[100dvh] place-items-center bg-paper px-6">

@@ -10,10 +10,6 @@ export async function designacoesAbertas(): Promise<Designacao[]> {
   return data as Designacao[];
 }
 
-// Nº de designações ABERTAS (territórios em posse agora) por publicador.
-// A UI usa isto para mostrar quantos territórios o publicador tem no momento;
-// ao devolver o último, a contagem zera e o publicador volta a poder ser
-// excluído (sujeito ainda ao histórico via FK `on delete restrict`).
 export async function contagemPorPublicador(): Promise<Record<string, number>> {
   const { data, error } = await supabase
     .from("designacao")
@@ -36,7 +32,6 @@ export async function designar(
     .insert({ territorio_id, publicador_id })
     .select()
     .single();
-  // O índice único parcial rejeita uma 2ª designação aberta no mesmo território.
   if (error) throw error;
   return data as Designacao;
 }

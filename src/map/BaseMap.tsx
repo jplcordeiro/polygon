@@ -10,13 +10,17 @@ export interface ViewState {
   zoom: number;
 }
 
+export type Bounds = [[number, number], [number, number]];
+
 export function BaseMap({
   showLocation = false,
   initialViewState,
+  bounds,
   children,
 }: {
   showLocation?: boolean;
   initialViewState?: ViewState;
+  bounds?: Bounds;
   children?: ReactNode;
 }) {
   const geolocate = useRef<ComponentRef<typeof GeolocateControl>>(null);
@@ -27,16 +31,14 @@ export function BaseMap({
       mapStyle="mapbox://styles/mapbox/streets-v12"
       style={{ width: "100%", height: "100%" }}
       initialViewState={
-        initialViewState ?? { longitude: -46.63, latitude: -23.55, zoom: 13 }
+        bounds
+          ? { bounds, fitBoundsOptions: { padding: 56, maxZoom: 15 } }
+          : (initialViewState ?? { longitude: -46.63, latitude: -23.55, zoom: 13 })
       }
       onLoad={() => {
-        // Aciona o "você está aqui" assim que o mapa carrega: a tela existe para
-        // localizar, então não esperamos o usuário achar o botão no canto.
         if (showLocation) geolocate.current?.trigger();
       }}
     >
-      {/* No celular o zoom é por pinça; os botões só disputam o canto com o
-          geolocate. Só mostramos a bússola/zoom quando não há localização. */}
       {!showLocation && <NavigationControl position="top-right" />}
       {showLocation && (
         <GeolocateControl

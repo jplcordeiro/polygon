@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-// Registra o mapbox-gl-draw como controle do mapa e reporta o polígono desenhado.
 function DrawControl({ onChange }: { onChange: (p: GeoJSON.Polygon | null) => void }) {
   useControl<MapboxDraw>(
     () =>
@@ -20,9 +19,7 @@ function DrawControl({ onChange }: { onChange: (p: GeoJSON.Polygon | null) => vo
         displayControlsDefault: false,
         controls: { polygon: true, trash: true },
       }),
-    // onAdd
     (evt) => {
-      // O tipo do mapa aqui não declara os eventos custom "draw.*".
       const map = evt.map as unknown as {
         on: (ev: string, cb: (e: { features?: GeoJSON.Feature[] }) => void) => void;
       };
@@ -47,7 +44,6 @@ export function Cadastro() {
   const [mapaPronto, setMapaPronto] = useState(false);
   const onChange = useCallback((p: GeoJSON.Polygon | null) => setPolygon(p), []);
 
-  // Centraliza o mapa na localização do usuário ao abrir a tela de cadastro.
   useEffect(() => {
     if (!navigator.geolocation) {
       setMapaPronto(true);
@@ -62,7 +58,7 @@ export function Cadastro() {
         });
         setMapaPronto(true);
       },
-      () => setMapaPronto(true), // permissão negada / erro → usa o padrão
+      () => setMapaPronto(true),
       { enableHighAccuracy: true, timeout: 8000 },
     );
   }, []);

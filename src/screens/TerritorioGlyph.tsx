@@ -41,7 +41,6 @@ export function TerritorioGlyph({ poligono }: { poligono: GeoJSON.Polygon | null
   const d =
     "M" +
     ring
-      // flip Y: latitude grows upward, SVG y grows downward
       .map(
         (p) =>
           `${(offX + (p[0] - minX) * scale).toFixed(1)},${(
