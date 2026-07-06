@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listTerritorios, setAtivo, statusTerritorio, excluirTerritorio } from "../lib/territorios";
 import { listPublicadores, criarPublicador, excluirPublicador } from "../lib/publicadores";
-import { designacoesAbertas, designar, devolver } from "../lib/designacoes";
+import {
+  designacoesAbertas,
+  designar,
+  devolver,
+  contagemPorPublicador,
+} from "../lib/designacoes";
 import type { Territorio, Publicador, Designacao } from "../lib/types";
 import { LogOut, MapPin, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -62,19 +67,22 @@ export function Gestao() {
   const [territorios, setTerritorios] = useState<Territorio[]>([]);
   const [publicadores, setPublicadores] = useState<Publicador[]>([]);
   const [abertas, setAbertas] = useState<Designacao[]>([]);
+  const [contagemPub, setContagemPub] = useState<Record<string, number>>({});
   const [novoNome, setNovoNome] = useState("");
   const [novoTel, setNovoTel] = useState("");
   const [carregando, setCarregando] = useState(true);
 
   async function carregar() {
-    const [t, p, d] = await Promise.all([
+    const [t, p, d, c] = await Promise.all([
       listTerritorios(),
       listPublicadores(),
       designacoesAbertas(),
+      contagemPorPublicador(),
     ]);
     setTerritorios(t);
     setPublicadores(p);
     setAbertas(d);
+    setContagemPub(c);
   }
   useEffect(() => {
     // só o carregamento inicial mostra o skeleton; recargas após ações não
@@ -393,51 +401,68 @@ export function Gestao() {
           </p>
         ) : (
           <ul className="flex flex-wrap gap-2">
-            {publicadores.map((p) => (
-              <li
-                key={p.id}
-                className="inline-flex items-center gap-2 rounded-full border border-line bg-white py-[6px] pl-[13px] pr-[7px] text-[0.88rem]"
-              >
-                <span className="inline-flex items-baseline gap-2">
-                  {p.nome}
-                  {p.telefone && (
-                    <span className="font-mono text-[0.78rem] tabular-nums text-ink-soft">
-                      {formatTelefone(p.telefone)}
-                    </span>
-                  )}
-                </span>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label={`Excluir ${p.nome}`}
-                      className="grid size-5 flex-none place-items-center rounded-full text-ink-faint transition-colors hover:bg-danger/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
+            {publicadores.map((p) => {
+              const n = contagemPub[p.id] ?? 0;
+              return (
+                <li
+                  key={p.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-white py-[6px] pl-[13px] pr-[7px] text-[0.88rem]"
+                >
+                  <span className="inline-flex items-baseline gap-2">
+                    {p.nome}
+                    {p.telefone && (
+                      <span className="font-mono text-[0.78rem] tabular-nums text-ink-soft">
+                        {formatTelefone(p.telefone)}
+                      </span>
+                    )}
+                  </span>
+                  {n > 0 ? (
+                    <span
+                      title={`${n} ${n === 1 ? "designação" : "designações"} no histórico — não pode ser excluído`}
+                      className="inline-flex items-center gap-1 rounded-full bg-mist px-2 py-0.5 text-[0.72rem] font-medium tabular-nums text-ink-soft"
                     >
-                      <X className="size-3.5" aria-hidden="true" />
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Excluir o publicador {p.nome}?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="destructive"
-                        onClick={() => excluirPub(p)}
-                      >
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </li>
-            ))}
+                      <MapPin className="size-3 flex-none" aria-hidden="true" />
+                      {n}
+                      <span className="sr-only">
+                        {n === 1 ? "designação" : "designações"} no histórico, não
+                        pode ser excluído
+                      </span>
+                    </span>
+                  ) : (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Excluir ${p.nome}`}
+                          className="grid size-5 flex-none place-items-center rounded-full text-ink-faint transition-colors hover:bg-danger/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
+                        >
+                          <X className="size-3.5" aria-hidden="true" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Excluir o publicador {p.nome}?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            variant="destructive"
+                            onClick={() => excluirPub(p)}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
