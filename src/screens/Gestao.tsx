@@ -418,14 +418,14 @@ export function Gestao() {
                   </span>
                   {n > 0 ? (
                     <span
-                      title={`${n} ${n === 1 ? "designação" : "designações"} no histórico — não pode ser excluído`}
+                      title={`${n} ${n === 1 ? "território designado" : "territórios designados"} no momento — devolva antes de excluir`}
                       className="inline-flex items-center gap-1 rounded-full bg-mist px-2 py-0.5 text-[0.72rem] font-medium tabular-nums text-ink-soft"
                     >
                       <MapPin className="size-3 flex-none" aria-hidden="true" />
                       {n}
                       <span className="sr-only">
-                        {n === 1 ? "designação" : "designações"} no histórico, não
-                        pode ser excluído
+                        {n === 1 ? "território designado" : "territórios designados"}{" "}
+                        no momento, devolva antes de excluir
                       </span>
                     </span>
                   ) : (

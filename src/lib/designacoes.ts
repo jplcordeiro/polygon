@@ -10,13 +10,15 @@ export async function designacoesAbertas(): Promise<Designacao[]> {
   return data as Designacao[];
 }
 
-// Nº de designações (abertas + histórico) por publicador. Como a FK é
-// `on delete restrict`, qualquer contagem > 0 significa que o publicador
-// não pode ser excluído — a UI usa isto para sinalizar isso de antemão.
+// Nº de designações ABERTAS (territórios em posse agora) por publicador.
+// A UI usa isto para mostrar quantos territórios o publicador tem no momento;
+// ao devolver o último, a contagem zera e o publicador volta a poder ser
+// excluído (sujeito ainda ao histórico via FK `on delete restrict`).
 export async function contagemPorPublicador(): Promise<Record<string, number>> {
   const { data, error } = await supabase
     .from("designacao")
-    .select("publicador_id");
+    .select("publicador_id")
+    .is("data_devolucao", null);
   if (error) throw error;
   const contagem: Record<string, number> = {};
   for (const { publicador_id } of data as { publicador_id: string }[]) {
