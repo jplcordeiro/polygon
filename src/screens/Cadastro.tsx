@@ -85,7 +85,7 @@ export function Cadastro() {
   }
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-paper">
+    <div className="relative h-dvh w-full overflow-hidden bg-paper">
       {mapaPronto ? (
         <div className="absolute inset-0">
           <BaseMap showLocation initialViewState={inicial}>
@@ -101,7 +101,6 @@ export function Cadastro() {
         </div>
       )}
 
-      {/* Voltar — flutua no topo-esquerdo, oposto aos controles do mapa */}
       <Link
         to="/"
         className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white/90 px-2.5 text-[0.85rem] font-medium text-ink shadow-card backdrop-blur transition-colors hover:text-jwblue"
@@ -110,10 +109,8 @@ export function Cadastro() {
         Territórios
       </Link>
 
-      {/* Painel de cadastro sobreposto ao mapa. O container não captura cliques;
-          só o card recebe pointer-events, deixando o mapa livre ao redor. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3">
-        <div className="pointer-events-auto mx-auto grid max-w-[520px] gap-3 rounded-2xl border border-line bg-white/95 p-3.5 shadow-card backdrop-blur">
+        <div className="pointer-events-auto mx-auto grid max-w-130 gap-3 rounded-2xl border border-line bg-white/95 p-3.5 shadow-card backdrop-blur">
           <div className="flex items-center gap-2 text-[0.74rem] font-medium tracking-[0.01em]">
             <span
               className={cn(

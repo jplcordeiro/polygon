@@ -34,7 +34,7 @@ export function Campo() {
   if (carregando) return <RadarLoader texto="Abrindo o território…" />;
   if (!t)
     return (
-      <div className="grid h-[100dvh] place-items-center bg-paper px-6">
+      <div className="grid h-dvh place-items-center bg-paper px-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <svg
             className="h-14 w-14 text-ink-faint"
@@ -68,12 +68,11 @@ export function Campo() {
   const c = t.limites ? centro(t.limites) : null;
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden">
+    <div className="relative h-dvh w-full overflow-hidden">
       <BaseMap showLocation initialViewState={c ?? undefined}>
         {t.limites && <TerritorioPolygon polygon={t.limites} />}
       </BaseMap>
 
-      {/* Voltar — flutua no topo-esquerdo, oposto aos controles do mapa */}
       <Link
         to="/"
         className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white/90 px-2.5 text-[0.85rem] font-medium text-ink shadow-card backdrop-blur transition-colors hover:text-jwblue"

@@ -140,7 +140,7 @@ export function Gestao() {
     "order-1 m-0 font-mono text-2xl font-medium leading-none tabular-nums";
 
   return (
-    <div className="mx-auto grid max-w-[880px] gap-[clamp(20px,4vw,32px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
+    <div className="mx-auto grid max-w-220 gap-[clamp(20px,4vw,32px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
       <header className="flex flex-wrap items-end justify-between gap-5 border-b border-line pb-[clamp(16px,3vw,24px)]">
         <div className="flex items-center gap-3.5">
           <svg
@@ -176,7 +176,7 @@ export function Gestao() {
             <LogOut aria-hidden="true" />
             Sair
           </Button>
-          <dl className="flex gap-[22px]">
+          <dl className="flex gap-5.5">
             <div className="grid gap-px text-right">
               <dt className={dt}>Territórios</dt>
               <dd className={`${ddBase} text-ink`}>{territorios.length}</dd>
@@ -268,7 +268,7 @@ export function Gestao() {
                     </span>
                   </div>
 
-                  <div className="grid justify-items-end gap-[3px] text-right">
+                  <div className="grid justify-items-end gap-0.75 text-right">
                     <Badge
                       className={cn(
                         "gap-1.5 pl-2 pr-2.5 before:size-1.5 before:rounded-full before:bg-current before:content-['']",
@@ -408,7 +408,7 @@ export function Gestao() {
               return (
                 <li
                   key={p.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-line bg-white py-[6px] pl-[13px] pr-[7px] text-[0.88rem]"
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-3.25 pr-1.75 text-[0.88rem]"
                 >
                   <span className="inline-flex items-baseline gap-2">
                     {p.nome}

@@ -1,6 +1,6 @@
 export function RadarLoader({ texto }: { texto: string }) {
   return (
-    <div className="grid h-[100dvh] place-items-center bg-paper">
+    <div className="grid h-dvh place-items-center bg-paper">
       <div className="flex flex-col items-center gap-5" role="status">
         <svg
           className="h-16 w-16 text-jwblue"

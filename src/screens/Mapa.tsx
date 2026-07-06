@@ -59,7 +59,7 @@ export function Mapa() {
 
   if (!bounds)
     return (
-      <div className="grid h-[100dvh] place-items-center bg-paper px-6">
+      <div className="grid h-dvh place-items-center bg-paper px-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <svg
             className="h-14 w-14 text-ink-faint"
@@ -91,7 +91,7 @@ export function Mapa() {
     );
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden">
+    <div className="relative h-dvh w-full overflow-hidden">
       <BaseMap bounds={bounds}>
         <TerritoriosLayer
           territorios={territorios}

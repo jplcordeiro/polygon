@@ -30,6 +30,10 @@ React 19 + TypeScript + Vite SPA (PWA via `vite-plugin-pwa`) talking **directly*
 - **`src/screens/`** — `Cadastro` (draw polygon with `@mapbox/mapbox-gl-draw`, read via `draw.*` events, save GeoJSON), `Gestao` (status list + publicadores + designar/devolver + excluir território), `Campo` (boundary + live position). `TerritorioGlyph` renders a território's boundary as a small normalized SVG "seal" for recognition (dashed placeholder when no polygon). Routes wired in `App.tsx` behind the auth gate.
 - **`supabase/migrations/0001_init.sql`** — the schema. The Supabase MCP is **read-only**; schema changes are applied by a human running the SQL in the Supabase SQL Editor, then committed here.
 
+## Code style
+
+- **Do not write comments in code.** Code should be self-explanatory through clear naming. Only add a comment if the user explicitly asks for it.
+
 ## UI & styling
 
 - **Tailwind CSS v4** via the `@tailwindcss/vite` plugin — no `tailwind.config.js`; all config lives in `src/index.css` using `@import "tailwindcss"`, `@theme`, and `@layer`. `tw-animate-css` provides animation utilities.
