@@ -24,3 +24,22 @@ export interface Designacao {
   data_devolucao: string | null;
   created_at: string;
 }
+
+export type Periodo = "manha" | "tarde";
+
+export interface Saida {
+  id: string;
+  data: string;
+  periodo: Periodo;
+  hora: string | null;
+  local: string | null;
+  publicador_id: string | null;
+  observacao: string | null;
+  created_at: string;
+  territorio_ids: string[];
+}
+
+export interface CalendarioNota {
+  mes: string;
+  texto: string;
+}
