@@ -5,6 +5,7 @@ import { Gestao } from "./screens/Gestao";
 import { Cadastro } from "./screens/Cadastro";
 import { Campo } from "./screens/Campo";
 import { Mapa } from "./screens/Mapa";
+import { Calendario } from "./screens/Calendario";
 import { LocatorSeal } from "./components/LocatorSeal";
 
 function AppBoot() {
@@ -37,6 +38,7 @@ export default function App() {
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/cadastro/:id" element={<Cadastro />} />
       <Route path="/mapa" element={<Mapa />} />
+      <Route path="/calendario" element={<Calendario />} />
       <Route path="/campo/:id" element={<Campo />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -24,6 +24,18 @@
   --color-mist: #eceff3;
   --color-danger: #a4483f;
 
+  --color-ocre: #8a6636;
+  --color-ocre-wash: #f7edda;
+
+  /* A semana é uma sequência: areia no fim de semana, sage → jwblue de segunda a sexta. */
+  --color-dia-0: #f6eee1;
+  --color-dia-1: #e6f1e9;
+  --color-dia-2: #e5f0ef;
+  --color-dia-3: #e4eef3;
+  --color-dia-4: #e4ecf6;
+  --color-dia-5: #e6e9f5;
+  --color-dia-6: #f2eee4;
+
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo,
@@ -158,5 +170,29 @@
     animation: none;
     stroke-dasharray: 4 6;
     opacity: 0.5;
+  }
+}
+
+/* ---- Folha do mês: a grade impressa em paisagem, para circular no grupo ---- */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body {
+    background: #fff;
+  }
+  .nao-imprime {
+    display: none !important;
+  }
+  .folha {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .folha-grade {
+    display: grid !important;
+  }
+  .folha-agenda {
+    display: none !important;
   }
 }

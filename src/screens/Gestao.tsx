@@ -106,7 +106,7 @@ export function Gestao() {
     } catch (err) {
       if ((err as { code?: string }).code === "23503") {
         toast.error(
-          "Não é possível excluir: este território tem histórico de designações.",
+          "Não é possível excluir: este território tem histórico de designações ou está no calendário de saídas.",
         );
       } else {
         toast.error("Não foi possível excluir o território. Tente novamente.");
@@ -122,7 +122,7 @@ export function Gestao() {
     } catch (err) {
       if ((err as { code?: string }).code === "23503") {
         toast.error(
-          "Não é possível excluir: este publicador tem histórico de designações.",
+          "Não é possível excluir: este publicador tem histórico de designações ou saídas no calendário.",
         );
       } else {
         toast.error("Não foi possível excluir o publicador. Tente novamente.");
@@ -200,6 +200,9 @@ export function Gestao() {
           </h2>
           <div className="flex flex-wrap gap-2">
             <Button asChild>
+              <Link to="/calendario">Calendário de saídas</Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link to="/mapa">Mapa da congregação</Link>
             </Button>
             <Button variant="outline" asChild>
