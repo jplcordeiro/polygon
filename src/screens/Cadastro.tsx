@@ -1,50 +1,141 @@
-import { useState, useCallback, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Link, useParams, useNavigate, useBlocker } from "react-router-dom";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
-import { useControl } from "react-map-gl/mapbox";
+import { useControl, useMap } from "react-map-gl/mapbox";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { BaseMap } from "../map/BaseMap";
-import type { ViewState } from "../map/BaseMap";
-import { criarTerritorio } from "../lib/territorios";
+import type { ViewState, Bounds } from "../map/BaseMap";
+import {
+  criarTerritorio,
+  atualizarTerritorio,
+  listTerritorios,
+  multiPolygonDe,
+  featureCollectionDe,
+  boundsDeTerritorios,
+  quadrasDe,
+} from "../lib/territorios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-function DrawControl({ onChange }: { onChange: (p: GeoJSON.Polygon | null) => void }) {
-  useControl<MapboxDraw>(
+export function DrawControl({
+  desenhoInicial,
+  onChange,
+}: {
+  desenhoInicial: GeoJSON.FeatureCollection | null;
+  onChange: (quadras: GeoJSON.MultiPolygon | null) => void;
+}) {
+  const draw = useRef<MapboxDraw | null>(null);
+  const { current: map } = useMap();
+  const atualizar = () =>
+    onChange(multiPolygonDe(draw.current?.getAll().features ?? []));
+
+  draw.current = useControl<MapboxDraw>(
     () =>
       new MapboxDraw({
         displayControlsDefault: false,
         controls: { polygon: true, trash: true },
       }),
     (evt) => {
-      const map = evt.map as unknown as {
-        on: (ev: string, cb: (e: { features?: GeoJSON.Feature[] }) => void) => void;
+      const m = evt.map as unknown as {
+        on: (ev: string, cb: () => void) => void;
       };
-      const upd = (e: { features?: GeoJSON.Feature[] }) => {
-        const f = e.features?.[0];
-        onChange(f ? (f.geometry as GeoJSON.Polygon) : null);
+      m.on("draw.create", atualizar);
+      m.on("draw.update", atualizar);
+      m.on("draw.delete", atualizar);
+    },
+    (evt) => {
+      const m = evt.map as unknown as {
+        off: (ev: string, cb: () => void) => void;
       };
-      map.on("draw.create", upd);
-      map.on("draw.update", upd);
-      map.on("draw.delete", () => onChange(null));
+      m.off("draw.create", atualizar);
+      m.off("draw.update", atualizar);
+      m.off("draw.delete", atualizar);
     },
   );
+
+  useEffect(() => {
+    if (!map || !desenhoInicial?.features.length) return;
+    const aplicar = () => draw.current?.set(desenhoInicial);
+    if (map.isStyleLoaded()) aplicar();
+    else map.once("load", aplicar);
+  }, [map, desenhoInicial]);
+
   return null;
 }
 
+const estadoDe = (
+  numero: string,
+  nome: string,
+  quadras: GeoJSON.MultiPolygon | null,
+) => JSON.stringify([numero.trim(), nome.trim(), quadras?.coordinates ?? null]);
+
+const VAZIO = estadoDe("", "", null);
+
 export function Cadastro() {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
-  const [polygon, setPolygon] = useState<GeoJSON.Polygon | null>(null);
+  const [quadras, setQuadras] = useState<GeoJSON.MultiPolygon | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [inicial, setInicial] = useState<ViewState | undefined>(undefined);
+  const [enquadramento, setEnquadramento] = useState<Bounds | undefined>(undefined);
+  const [desenhoInicial, setDesenhoInicial] =
+    useState<GeoJSON.FeatureCollection | null>(null);
   const [mapaPronto, setMapaPronto] = useState(false);
-  const onChange = useCallback((p: GeoJSON.Polygon | null) => setPolygon(p), []);
+  const [salvo, setSalvo] = useState(VAZIO);
+  const saindoAposSalvar = useRef(false);
+  const onChange = useCallback((q: GeoJSON.MultiPolygon | null) => setQuadras(q), []);
+
+  const alterado = estadoDe(numero, nome, quadras) !== salvo;
+  const bloqueio = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      alterado &&
+      !saindoAposSalvar.current &&
+      currentLocation.pathname !== nextLocation.pathname,
+  );
 
   useEffect(() => {
+    if (id) {
+      listTerritorios()
+        .then((todos) => {
+          const t = todos.find((x) => x.id === id);
+          if (!t) {
+            toast.error("Território não encontrado.");
+            navigate("/");
+            return;
+          }
+          const limites: GeoJSON.MultiPolygon | null = t.limites
+            ? { type: "MultiPolygon", coordinates: quadrasDe(t.limites) }
+            : null;
+          setNumero(t.numero);
+          setNome(t.nome ?? "");
+          setQuadras(limites);
+          setSalvo(estadoDe(t.numero, t.nome ?? "", limites));
+          setDesenhoInicial(featureCollectionDe(t.limites));
+          setEnquadramento(boundsDeTerritorios([t]) ?? undefined);
+          setMapaPronto(true);
+        })
+        .catch(() => {
+          toast.error("Não foi possível abrir o território.");
+          navigate("/");
+        });
+      return;
+    }
+
     if (!navigator.geolocation) {
       setMapaPronto(true);
       return;
@@ -61,17 +152,29 @@ export function Cadastro() {
       () => setMapaPronto(true),
       { enableHighAccuracy: true, timeout: 8000 },
     );
-  }, []);
+  }, [id, navigate]);
 
   async function salvar() {
-    if (!numero || !polygon) return;
+    if (!numero || !quadras) return;
     setSalvando(true);
     try {
-      await criarTerritorio({ numero, nome: nome || undefined, limites: polygon });
-      setNumero("");
-      setNome("");
-      setPolygon(null);
-      toast.success(`Território Nº ${numero} salvo.`);
+      if (id) {
+        await atualizarTerritorio(id, {
+          numero,
+          nome: nome || undefined,
+          limites: quadras,
+        });
+        toast.success(`Território Nº ${numero} atualizado.`);
+        saindoAposSalvar.current = true;
+        navigate("/");
+      } else {
+        await criarTerritorio({ numero, nome: nome || undefined, limites: quadras });
+        setNumero("");
+        setNome("");
+        setQuadras(null);
+        setSalvo(VAZIO);
+        toast.success(`Território Nº ${numero} salvo.`);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       toast.error(
@@ -84,12 +187,24 @@ export function Cadastro() {
     }
   }
 
+  const total = quadras?.coordinates.length ?? 0;
+  const rotuloQuadras =
+    total === 0
+      ? "Desenhe as quadras do território no mapa"
+      : total === 1
+        ? "1 quadra desenhada — pronto para salvar"
+        : `${total} quadras desenhadas — pronto para salvar`;
+
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-paper">
       {mapaPronto ? (
         <div className="absolute inset-0">
-          <BaseMap showLocation initialViewState={inicial}>
-            <DrawControl onChange={onChange} />
+          <BaseMap
+            showLocation={!id}
+            initialViewState={inicial}
+            bounds={enquadramento}
+          >
+            <DrawControl desenhoInicial={desenhoInicial} onChange={onChange} />
           </BaseMap>
         </div>
       ) : (
@@ -115,14 +230,12 @@ export function Cadastro() {
             <span
               className={cn(
                 "size-2 flex-none rounded-full transition-colors",
-                polygon ? "bg-sage" : "bg-ink-faint",
+                total > 0 ? "bg-sage" : "bg-ink-faint",
               )}
               aria-hidden="true"
             />
-            <span className={polygon ? "text-sage-ink" : "text-ink-soft"}>
-              {polygon
-                ? "Limite desenhado — pronto para salvar"
-                : "Desenhe o limite do território no mapa"}
+            <span className={total > 0 ? "text-sage-ink" : "text-ink-soft"}>
+              {rotuloQuadras}
             </span>
           </div>
 
@@ -146,12 +259,44 @@ export function Cadastro() {
           <Button
             className="w-full"
             onClick={salvar}
-            disabled={!numero || !polygon || salvando}
+            disabled={!numero || !quadras || salvando}
           >
-            {salvando ? "Salvando…" : "Salvar território"}
+            {salvando
+              ? "Salvando…"
+              : id
+                ? "Salvar alterações"
+                : "Salvar território"}
           </Button>
         </div>
       </div>
+
+      <AlertDialog
+        open={bloqueio.state === "blocked"}
+        onOpenChange={(aberto) => {
+          if (!aberto) bloqueio.reset?.();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair sem salvar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              As alterações neste território ainda não foram salvas. Se você sair
+              agora, elas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => bloqueio.reset?.()}>
+              Continuar editando
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => bloqueio.proceed?.()}
+            >
+              Sair sem salvar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
