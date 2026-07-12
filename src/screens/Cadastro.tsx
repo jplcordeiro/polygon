@@ -29,6 +29,8 @@ function DrawControl({
 }) {
   const draw = useRef<MapboxDraw | null>(null);
   const { current: map } = useMap();
+  const atualizar = () =>
+    onChange(multiPolygonDe(draw.current?.getAll().features ?? []));
 
   useControl<MapboxDraw>(
     () => {
@@ -42,11 +44,17 @@ function DrawControl({
       const m = evt.map as unknown as {
         on: (ev: string, cb: () => void) => void;
       };
-      const atualizar = () =>
-        onChange(multiPolygonDe(draw.current?.getAll().features ?? []));
       m.on("draw.create", atualizar);
       m.on("draw.update", atualizar);
       m.on("draw.delete", atualizar);
+    },
+    (evt) => {
+      const m = evt.map as unknown as {
+        off: (ev: string, cb: () => void) => void;
+      };
+      m.off("draw.create", atualizar);
+      m.off("draw.update", atualizar);
+      m.off("draw.delete", atualizar);
     },
   );
 
