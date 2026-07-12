@@ -21,6 +21,24 @@ export function quadrasDe(limites: Limites | null): Quadra[] {
   return limites.type === "MultiPolygon" ? limites.coordinates : [limites.coordinates];
 }
 
+export function multiPolygonDe(features: GeoJSON.Feature[]): GeoJSON.MultiPolygon | null {
+  const coordinates = features
+    .filter((f) => f.geometry?.type === "Polygon")
+    .map((f) => (f.geometry as GeoJSON.Polygon).coordinates);
+  return coordinates.length > 0 ? { type: "MultiPolygon", coordinates } : null;
+}
+
+export function featureCollectionDe(limites: Limites | null): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: quadrasDe(limites).map((coordinates) => ({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "Polygon", coordinates },
+    })),
+  };
+}
+
 export function boundsDeTerritorios(territorios: Territorio[]): Bounds | null {
   let minLng = Infinity,
     minLat = Infinity,
@@ -66,6 +84,21 @@ export async function criarTerritorio(input: {
     .single();
   if (error) throw error;
   return data as Territorio;
+}
+
+export async function atualizarTerritorio(
+  id: string,
+  input: { numero: string; nome?: string; limites: GeoJSON.MultiPolygon },
+): Promise<void> {
+  const { error } = await supabase
+    .from("territorio")
+    .update({
+      numero: input.numero,
+      nome: input.nome ?? null,
+      limites: input.limites,
+    })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function setAtivo(id: string, ativo: boolean): Promise<void> {
