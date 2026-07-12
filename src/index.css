@@ -41,6 +41,11 @@
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo,
     Consolas, monospace;
 
+  /* A folha é lida de longe, no quadro de avisos, por olhos de toda idade:
+     a Atkinson Hyperlegible existe exatamente para isso. */
+  --font-escala: "Atkinson Hyperlegible Next Variable", var(--font-sans);
+  --font-escala-mono: "Atkinson Hyperlegible Mono Variable", var(--font-mono);
+
   --shadow-card: 0 1px 2px rgb(41 50 60 / 0.04), 0 6px 20px rgb(41 50 60 / 0.05);
 }
 

@@ -153,7 +153,7 @@ export function Calendario() {
     if (s.territorio_ids.length === 0) return null;
     if (tamanho === "texto") {
       return (
-        <span className="pointer-events-auto flex flex-wrap gap-x-1.5 font-mono text-[0.7rem] tabular-nums text-jwblue-deep">
+        <span className="pointer-events-auto flex flex-wrap gap-1">
           {s.territorio_ids.map((id) => {
             const t = territorioDe(id);
             if (!t) return null;
@@ -161,7 +161,7 @@ export function Calendario() {
               <Link
                 key={id}
                 to={`/campo/${t.id}`}
-                className="underline-offset-2 hover:underline"
+                className="rounded bg-white/75 px-1.5 font-escala-mono text-[0.72rem] font-medium tabular-nums text-jwblue-deep transition-colors hover:bg-white"
                 title={`Abrir o mapa do território ${t.numero}`}
               >
                 {t.numero}
@@ -186,7 +186,7 @@ export function Calendario() {
               <span className="h-9 w-9 rounded-md bg-white/70 p-0.5">
                 <TerritorioGlyph limites={t.limites} />
               </span>
-              <span className="font-mono text-[0.66rem] tabular-nums text-ink-soft">
+              <span className="font-escala-mono text-[0.68rem] font-medium tabular-nums text-ink-soft">
                 {t.numero}
               </span>
             </Link>
@@ -199,7 +199,7 @@ export function Calendario() {
   function Eyebrow({ s }: { s: Saida }) {
     if (s.periodo === "manha" && !s.hora) return null;
     return (
-      <span className="font-mono text-[0.64rem] uppercase tracking-[0.06em] text-ink-faint">
+      <span className="font-escala-mono text-[0.66rem] font-medium uppercase tracking-[0.06em] text-ink-faint">
         {s.periodo === "manha" ? "manhã" : "tarde"}
         {s.hora ? ` · ${s.hora.slice(0, 5)}` : ""}
       </span>
@@ -255,9 +255,9 @@ export function Calendario() {
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
             Saídas de campo
           </p>
-          <h1 className="mt-1 text-[clamp(1.6rem,4vw,2.2rem)] font-semibold leading-none tracking-[-0.02em] text-jwblue-deep">
+          <h1 className="mt-1 font-escala text-[clamp(1.6rem,4vw,2.2rem)] font-bold leading-none tracking-[-0.02em] text-jwblue-deep">
             {MES_NOME[mes.mes - 1]}{" "}
-            <span className="font-mono tabular-nums text-ink-faint">{mes.ano}</span>
+            <span className="font-escala-mono tabular-nums text-ink-faint">{mes.ano}</span>
           </h1>
         </div>
       </header>
@@ -270,12 +270,12 @@ export function Calendario() {
         />
       ) : (
         <>
-          <div className="folha-grade hidden grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line shadow-card sm:grid">
+          <div className="folha-grade hidden grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line font-escala shadow-card sm:grid">
             {ABREV_DIA.map((d, i) => (
               <div
                 key={d}
                 className={cn(
-                  "bg-white px-2 py-1.5 text-center text-[0.68rem] font-semibold uppercase tracking-[0.12em]",
+                  "bg-white px-2 py-1.5 text-center text-[0.68rem] font-bold uppercase tracking-[0.12em]",
                   i === 0 ? "text-ocre" : "text-ink-soft",
                 )}
               >
@@ -309,36 +309,38 @@ export function Calendario() {
                   />
                   <span
                     className={cn(
-                      "pointer-events-none relative px-1.5 pt-1 text-right font-mono text-[0.72rem] tabular-nums",
-                      ehHoje ? "font-semibold text-jwblue-deep" : "text-ink-soft",
+                      "pointer-events-none relative px-1.5 pt-1 text-right font-escala-mono text-[0.78rem] font-semibold tabular-nums",
+                      ehHoje ? "text-jwblue-deep" : "text-ink-soft",
                     )}
                   >
                     {diaDe(data)}
                   </span>
 
-                  <div className="pointer-events-none relative grid gap-1 px-1.5 pb-1.5">
+                  <div className="pointer-events-none relative grid gap-1.5 px-1.5 pb-1.5">
                     {doDia.map((s) => (
                       <div
                         key={s.id}
-                        className="grid gap-0.5 border-t border-white/70 pt-1 leading-tight first:border-0 first:pt-0"
+                        className="grid gap-0.5 border-t border-white/70 pt-1.5 leading-[1.2] first:border-0 first:pt-0"
                       >
                         <Eyebrow s={s} />
                         {s.local && (
-                          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.04em] text-jwblue-deep">
+                          <span className="text-[0.86rem] font-bold leading-[1.15] tracking-[-0.005em] text-jwblue-deep">
                             {s.local}
                           </span>
                         )}
                         <span
                           className={cn(
-                            "text-[0.74rem]",
-                            s.publicador_id ? "text-ink" : "italic text-ocre",
+                            "text-[0.76rem]",
+                            s.publicador_id
+                              ? "font-medium text-ink"
+                              : "italic text-ocre",
                           )}
                         >
                           {nomePub(s.publicador_id) ?? "a definir"}
                         </span>
                         <Territorios s={s} tamanho="texto" />
                         {s.observacao && (
-                          <span className="text-[0.66rem] italic text-ink-soft">
+                          <span className="text-[0.7rem] italic text-ink-soft">
                             {s.observacao}
                           </span>
                         )}
@@ -350,7 +352,7 @@ export function Calendario() {
             })}
           </div>
 
-          <ol className="folha-agenda grid gap-2.5 sm:hidden">
+          <ol className="folha-agenda grid gap-2.5 font-escala sm:hidden">
             {diasComSaida.length === 0 ? (
               <p className="py-6 text-center text-[0.9rem] text-ink-soft">
                 Nenhuma saída neste mês. Toque em “Adicionar saída” para começar.
@@ -370,14 +372,14 @@ export function Calendario() {
                     <div
                       className={cn("flex items-baseline gap-2 px-3.5 py-2", WASH[dow])}
                     >
-                      <span className="font-mono text-lg font-medium leading-none tabular-nums text-ink">
+                      <span className="font-escala-mono text-lg font-bold leading-none tabular-nums text-ink">
                         {diaDe(data)}
                       </span>
-                      <span className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-ink-soft">
+                      <span className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-ink-soft">
                         {DIA_SEMANA[dow]}
                       </span>
                       {ehHoje && (
-                        <span className="ml-auto text-[0.68rem] font-semibold uppercase tracking-widest text-jwblue-deep">
+                        <span className="ml-auto text-[0.68rem] font-bold uppercase tracking-widest text-jwblue-deep">
                           hoje
                         </span>
                       )}
@@ -391,14 +393,16 @@ export function Calendario() {
                           <div className="grid min-w-0 flex-1 gap-0.5">
                             <Eyebrow s={s} />
                             {s.local && (
-                              <span className="text-[0.92rem] font-semibold text-jwblue-deep">
+                              <span className="text-[1rem] font-bold leading-[1.2] tracking-[-0.005em] text-jwblue-deep">
                                 {s.local}
                               </span>
                             )}
                             <span
                               className={cn(
-                                "text-[0.85rem]",
-                                s.publicador_id ? "text-ink" : "italic text-ocre",
+                                "text-[0.86rem]",
+                                s.publicador_id
+                                  ? "font-medium text-ink"
+                                  : "italic text-ocre",
                               )}
                             >
                               {nomePub(s.publicador_id) ?? "dirigente a definir"}
