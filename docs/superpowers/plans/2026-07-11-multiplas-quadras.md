@@ -187,8 +187,9 @@ Duas funções puras que fazem a ponte entre o `MapboxDraw` (que fala `Feature[]
 - Produces:
   - `multiPolygonDe(features: GeoJSON.Feature[]): GeoJSON.MultiPolygon | null`
   - `featureCollectionDe(limites: Limites | null): GeoJSON.FeatureCollection`
-  - `criarTerritorio(input: { numero: string; nome?: string; limites: GeoJSON.MultiPolygon }): Promise<Territorio>` (tipo de `limites` estreitado)
   - `atualizarTerritorio(id: string, input: { numero: string; nome?: string; limites: GeoJSON.MultiPolygon }): Promise<void>`
+
+`criarTerritorio` **não muda nesta task** — o tipo dele é estreitado na Task 5, junto com o `Cadastro` que o chama, para que o `tsc` nunca fique quebrado entre commits.
 
 - [ ] **Step 1: Escreva os testes que falham**
 
@@ -294,9 +295,9 @@ export function featureCollectionDe(limites: Limites | null): GeoJSON.FeatureCol
 Run: `npx vitest run src/lib/territorios.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Estreite `criarTerritorio` e adicione `atualizarTerritorio`**
+- [ ] **Step 5: Adicione `atualizarTerritorio`**
 
-Em `src/lib/territorios.ts`, troque a assinatura de `criarTerritorio` (o campo `limites: GeoJSON.Polygon` vira `limites: GeoJSON.MultiPolygon`; o corpo não muda) e acrescente logo abaixo dela:
+Em `src/lib/territorios.ts`, logo abaixo de `criarTerritorio` (que **não muda** nesta task):
 
 ```ts
 export async function atualizarTerritorio(
@@ -317,10 +318,10 @@ export async function atualizarTerritorio(
 
 Não há teste automatizado aqui: é uma chamada de rede fina, e o repositório não mocka o `supabase` nos testes de `lib`. O contrato dela é exercido pelo teste de tela na Task 6.
 
-- [ ] **Step 6: Rode a suíte inteira e o typecheck**
+- [ ] **Step 6: Rode a suíte inteira, o lint e o build**
 
-Run: `npm run test && npm run build`
-Expected: os testes passam; o `tsc` **falha** em `src/screens/Cadastro.tsx` (`GeoJSON.Polygon` não é atribuível a `GeoJSON.MultiPolygon`) — é esperado, e a Task 5 conserta. Se quiser um commit com o build verde, faça as Tasks 3-6 antes de rodar `npm run build`.
+Run: `npm run test && npm run lint && npm run build`
+Expected: PASS nos três.
 
 - [ ] **Step 7: Commit**
 
@@ -679,10 +680,12 @@ O `DrawControl` para de jogar fora tudo menos o primeiro polígono. Em vez de re
 
 **Files:**
 - Modify: `src/screens/Cadastro.tsx`
+- Modify: `src/lib/territorios.ts` (assinatura de `criarTerritorio`)
 - Test: `src/screens/Cadastro.test.tsx`
 
 **Interfaces:**
 - Consumes: `multiPolygonDe`, `criarTerritorio` (Task 2).
+- Produces: `criarTerritorio(input: { numero: string; nome?: string; limites: GeoJSON.MultiPolygon })` — o tipo de `limites` é estreitado **aqui**, no mesmo commit que o chamador passa a mandar `MultiPolygon`, para o `tsc` nunca quebrar entre commits.
 - Produces: `Cadastro` no modo criação, salvando `MultiPolygon`. A Task 6 acrescenta o modo edição **neste mesmo componente**.
 
 - [ ] **Step 1: Escreva os testes que falham**
@@ -799,6 +802,8 @@ Em `salvar()`, troque `if (!numero || !polygon) return;` por `if (!numero || !qu
 `await criarTerritorio({ numero, nome: nome || undefined, limites: quadras });`
 e o reset `setPolygon(null)` por `setQuadras(null)`.
 
+E, em `src/lib/territorios.ts`, estreite a assinatura de `criarTerritorio` — o campo `limites: GeoJSON.Polygon` vira `limites: GeoJSON.MultiPolygon` (o corpo da função não muda). Agora todo território salvo é `MultiPolygon`, mesmo com uma quadra só.
+
 - [ ] **Step 5: Mostre a contagem de quadras no painel**
 
 Ainda em `src/screens/Cadastro.tsx`, logo antes do `return`, acrescente:
@@ -837,12 +842,12 @@ O `<DrawControl onChange={onChange} />` dentro do `<BaseMap>` não muda.
 - [ ] **Step 6: Rode os testes, o lint e o build**
 
 Run: `npm run test && npm run lint && npm run build`
-Expected: PASS nos três — o `tsc` agora fecha, porque `criarTerritorio` recebe o `MultiPolygon` que a Task 2 passou a exigir.
+Expected: PASS nos três.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/screens/Cadastro.tsx src/screens/Cadastro.test.tsx
+git add src/screens/Cadastro.tsx src/screens/Cadastro.test.tsx src/lib/territorios.ts
 git commit -m "feat(cadastro): desenhar várias quadras não contíguas por território"
 ```
 
