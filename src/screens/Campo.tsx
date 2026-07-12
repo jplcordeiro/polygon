@@ -65,12 +65,12 @@ export function Campo() {
       </div>
     );
 
-  const c = t.limites ? centro(t.limites) : null;
+  const c = t.limites ? centro(t.limites as GeoJSON.Polygon) : null;
 
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <BaseMap showLocation initialViewState={c ?? undefined}>
-        {t.limites && <TerritorioPolygon polygon={t.limites} />}
+        {t.limites && <TerritorioPolygon polygon={t.limites as GeoJSON.Polygon} />}
       </BaseMap>
 
       <Link
