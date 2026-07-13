@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { BaseMap } from "../map/BaseMap";
 import { TerritoriosLayer } from "../map/TerritoriosLayer";
 import {
@@ -19,18 +18,6 @@ const LEGENDA: { status: StatusTerritorio; cor: string; rotulo: string }[] = [
   { status: "designado", cor: "#486492", rotulo: "Designado" },
   { status: "inativo", cor: "#98a1ae", rotulo: "Inativo" },
 ];
-
-function BotaoVoltar() {
-  return (
-    <Link
-      to="/"
-      className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white/90 px-2.5 text-[0.85rem] font-medium text-ink shadow-card backdrop-blur transition-colors hover:text-jwblue"
-    >
-      <ArrowLeft className="size-4" aria-hidden="true" />
-      Territórios
-    </Link>
-  );
-}
 
 export function Mapa() {
   const [territorios, setTerritorios] = useState<Territorio[]>([]);
@@ -55,11 +42,11 @@ export function Mapa() {
   const bounds = useMemo(() => boundsDeTerritorios(territorios), [territorios]);
   const semMapa = territorios.filter((t) => !t.limites).length;
 
-  if (carregando) return <RadarLoader texto="Abrindo o mapa…" />;
+  if (carregando) return <RadarLoader texto="Abrindo o mapa…" className="h-full" />;
 
   if (!bounds)
     return (
-      <div className="grid h-dvh place-items-center bg-paper px-6">
+      <div className="grid h-full place-items-center bg-paper px-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <svg
             className="h-14 w-14 text-ink-faint"
@@ -91,7 +78,7 @@ export function Mapa() {
     );
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden">
       <BaseMap bounds={bounds}>
         <TerritoriosLayer
           territorios={territorios}
@@ -99,8 +86,6 @@ export function Mapa() {
           onSelect={(id) => navigate(`/campo/${id}`)}
         />
       </BaseMap>
-
-      <BotaoVoltar />
 
       <div className="absolute bottom-3 left-3 z-10 grid gap-1.5 rounded-lg border border-line bg-white/90 px-3 py-2.5 shadow-card backdrop-blur">
         {LEGENDA.map((l) => (

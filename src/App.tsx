@@ -7,6 +7,7 @@ import { Campo } from "./screens/Campo";
 import { Mapa } from "./screens/Mapa";
 import { Calendario } from "./screens/Calendario";
 import { LocatorSeal } from "./components/LocatorSeal";
+import { AppShell } from "./components/AppShell";
 
 function AppBoot() {
   return (
@@ -34,11 +35,13 @@ export default function App() {
   if (!session) return <Login />;
   return (
     <Routes>
-      <Route path="/" element={<Gestao />} />
+      <Route element={<AppShell />}>
+        <Route path="/" element={<Gestao />} />
+        <Route path="/mapa" element={<Mapa />} />
+        <Route path="/calendario" element={<Calendario />} />
+      </Route>
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/cadastro/:id" element={<Cadastro />} />
-      <Route path="/mapa" element={<Mapa />} />
-      <Route path="/calendario" element={<Calendario />} />
       <Route path="/campo/:id" element={<Campo />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

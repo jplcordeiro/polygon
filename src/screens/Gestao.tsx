@@ -8,8 +8,7 @@ import {
   contagemPorPublicador,
 } from "../lib/designacoes";
 import type { Territorio, Publicador, Designacao } from "../lib/types";
-import { LogOut, MapPin, X } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { MapPin, X } from "lucide-react";
 import { TerritorioGlyph } from "./TerritorioGlyph";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,60 +108,14 @@ export function Gestao() {
 
   return (
     <div className="mx-auto grid max-w-220 gap-[clamp(20px,4vw,32px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
-      <header className="flex flex-wrap items-end justify-between gap-5 border-b border-line pb-[clamp(16px,3vw,24px)]">
-        <div className="flex items-center gap-3.5">
-          <svg
-            className="h-10 w-10 flex-none text-jwblue"
-            viewBox="0 0 100 100"
-            aria-hidden="true"
-            fill="none"
-          >
-            <path
-              d="M20 34 L50 20 L80 34 L80 68 L50 82 L20 68 Z"
-              stroke="currentColor"
-              strokeWidth="6"
-              strokeLinejoin="round"
-            />
-            <circle cx="50" cy="51" r="7" fill="currentColor" />
-          </svg>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-[-0.02em] text-ink">
-              polygon
-            </h1>
-            <p className="mt-0.5 text-[0.82rem] tracking-[0.01em] text-ink-soft">
-              Gestão de territórios
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => supabase.auth.signOut()}
-            className="text-ink-soft hover:text-jwblue"
-          >
-            <LogOut aria-hidden="true" />
-            Sair
-          </Button>
-        </div>
-      </header>
-
       <section className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-ink-soft">
             Territórios
           </h2>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild>
-              <Link to="/calendario">Calendário de saídas</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/mapa">Mapa da congregação</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/cadastro">Cadastrar território</Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link to="/cadastro">Cadastrar território</Link>
+          </Button>
         </div>
 
         {carregando ? (

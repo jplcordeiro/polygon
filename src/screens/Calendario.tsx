@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   diaDaSemana,
@@ -209,12 +209,6 @@ export function Calendario() {
     <div className="folha mx-auto grid max-w-300 gap-[clamp(16px,3vw,26px)] px-[clamp(12px,3vw,32px)] pt-[clamp(16px,4vw,36px)] pb-24">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div className="nao-imprime flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/">
-              <ArrowLeft aria-hidden="true" />
-              Voltar
-            </Link>
-          </Button>
           <Button size="sm" onClick={() => window.print()}>
             <Printer aria-hidden="true" />
             Imprimir
