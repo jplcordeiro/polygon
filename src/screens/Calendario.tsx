@@ -10,6 +10,7 @@ import {
   gradeDoMes,
   listSaidas,
   locaisUsados,
+  MES_NOME,
   mesVizinho,
   mesmoMes,
   notaDoMes,
@@ -43,21 +44,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-
-const MES_NOME = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
 
 const ABREV_DIA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 

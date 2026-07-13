@@ -16,6 +16,21 @@ export const DIA_SEMANA = [
   "sábado",
 ] as const;
 
+export const MES_NOME = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+] as const;
+
 export function iso({ ano, mes }: Mes, dia: number): string {
   const d = new Date(ano, mes - 1, dia);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
