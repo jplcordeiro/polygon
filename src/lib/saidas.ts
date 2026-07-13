@@ -182,13 +182,26 @@ export async function atualizarSaida(id: string, entrada: EntradaSaida): Promise
   const { error } = await supabase.from("saida").update(campos).eq("id", id);
   if (error) throw error;
 
-  const { error: erroLimpeza } = await supabase
+  const { data, error: erroVinculos } = await supabase
     .from("saida_territorio")
-    .delete()
+    .select("territorio_id")
     .eq("saida_id", id);
-  if (erroLimpeza) throw erroLimpeza;
+  if (erroVinculos) throw erroVinculos;
 
-  await vincularTerritorios(id, territorio_ids);
+  const atuais = (data as { territorio_id: string }[]).map((v) => v.territorio_id);
+  const removidos = atuais.filter((t) => !territorio_ids.includes(t));
+  const novos = territorio_ids.filter((t) => !atuais.includes(t));
+
+  if (removidos.length > 0) {
+    const { error: erroRemocao } = await supabase
+      .from("saida_territorio")
+      .delete()
+      .eq("saida_id", id)
+      .in("territorio_id", removidos);
+    if (erroRemocao) throw erroRemocao;
+  }
+
+  await vincularTerritorios(id, novos);
 }
 
 export async function excluirSaida(id: string): Promise<void> {
