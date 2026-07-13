@@ -15,6 +15,7 @@ import {
   featureCollectionDe,
   boundsDeTerritorios,
 } from "../lib/territorios";
+import { listMarcas, progressoDe } from "../lib/quadras";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -99,6 +100,8 @@ export function Cadastro() {
     useState<GeoJSON.FeatureCollection | null>(null);
   const [mapaPronto, setMapaPronto] = useState(false);
   const [salvo, setSalvo] = useState(VAZIO);
+  const [marcadas, setMarcadas] = useState(0);
+  const [confirmandoEdicao, setConfirmandoEdicao] = useState(false);
   const saindoAposSalvar = useRef(false);
   const onChange = useCallback((q: Quadras | null) => setQuadras(q), []);
 
@@ -112,8 +115,8 @@ export function Cadastro() {
 
   useEffect(() => {
     if (id) {
-      listTerritorios()
-        .then((todos) => {
+      Promise.all([listTerritorios(), listMarcas()])
+        .then(([todos, marcas]) => {
           const t = todos.find((x) => x.id === id);
           if (!t) {
             toast.error("Território não encontrado.");
@@ -128,6 +131,7 @@ export function Cadastro() {
           setSalvo(estadoDe(t.numero, t.nome ?? "", limites));
           setDesenhoInicial(desenho);
           setEnquadramento(boundsDeTerritorios([t]) ?? undefined);
+          setMarcadas(progressoDe(t, marcas).feitas);
           setMapaPronto(true);
         })
         .catch(() => {
@@ -259,7 +263,7 @@ export function Cadastro() {
 
           <Button
             className="w-full"
-            onClick={salvar}
+            onClick={() => (marcadas > 0 ? setConfirmandoEdicao(true) : salvar())}
             disabled={!numero || !quadras || salvando}
           >
             {salvando
@@ -294,6 +298,31 @@ export function Cadastro() {
               onClick={() => bloqueio.proceed?.()}
             >
               Sair sem salvar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmandoEdicao} onOpenChange={setConfirmandoEdicao}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Salvar mesmo com a rodada em andamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este território tem {marcadas}{" "}
+              {marcadas === 1 ? "quadra marcada" : "quadras marcadas"} nesta rodada. Se
+              você apagar uma quadra marcada, ela deixa de contar; se acrescentar uma
+              nova, ela entra como a fazer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmandoEdicao(false);
+                salvar();
+              }}
+            >
+              Salvar alterações
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
