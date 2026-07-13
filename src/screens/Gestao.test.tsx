@@ -68,6 +68,8 @@ const marca = (quadra_id: string): Marca => ({
   territorio_id: "t1",
   quadra_id,
   data: "2026-07-12",
+  local: null,
+  publicador_id: null,
 });
 
 async function montar(marcas: Marca[] = [], t: Territorio = territorio) {

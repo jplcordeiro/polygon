@@ -72,6 +72,8 @@ async function renderEdicao(comQuadraMarcada = false) {
             territorio_id: "t1",
             quadra_id: "quadra-a",
             data: "2026-07-12",
+            local: null,
+            publicador_id: null,
           },
         ]
       : [],

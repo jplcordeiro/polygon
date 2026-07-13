@@ -115,12 +115,16 @@ describe("MarcarQuadras", () => {
         territorio_id: "t1",
         quadra_id: "qa",
         data: "2026-07-12",
+        local: null,
+        publicador_id: null,
       },
       {
         saida_id: "s0",
         territorio_id: "t1",
         quadra_id: "qb",
         data: "2026-07-05",
+        local: null,
+        publicador_id: null,
       },
     ]);
     toastInfo.mockClear();

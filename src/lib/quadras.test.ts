@@ -1,7 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
-import { listMarcas, marcasDaRodada, quadrasFeitasDe, progressoDe } from "./quadras";
+import {
+  listMarcas,
+  historicoDaQuadra,
+  marcasDaRodada,
+  quadrasFeitasDe,
+  progressoDe,
+} from "./quadras";
 import type { Marca } from "./quadras";
-import type { Territorio } from "./types";
+import type { Publicador, Territorio } from "./types";
 
 const linhas: Record<string, unknown[]> = {
   quadra_feita: [],
@@ -58,6 +64,8 @@ const marca = (quadra_id: string, data: string, saida_id = "s1"): Marca => ({
   territorio_id: "t1",
   quadra_id,
   data,
+  local: null,
+  publicador_id: null,
 });
 
 describe("listMarcas", () => {
@@ -72,27 +80,76 @@ describe("listMarcas", () => {
     expect(pedido).not.toMatch(/saida\s*\(/);
   });
 
-  it("traz a data de cada marca a partir da saída dela", async () => {
-    linhas.quadra_feita = [
-      { saida_id: "s1", territorio_id: "t1", quadra_id: "qa" },
-      { saida_id: "s2", territorio_id: "t1", quadra_id: "qb" },
-    ];
+  it("traz data, local e dirigente de cada marca a partir da saída dela", async () => {
+    linhas.quadra_feita = [{ saida_id: "s1", territorio_id: "t1", quadra_id: "qa" }];
     linhas.saida = [
-      { id: "s1", data: "2026-07-12" },
-      { id: "s2", data: "2026-07-15" },
+      { id: "s1", data: "2026-07-12", local: "Gruta da Ilha", publicador_id: "p1" },
     ];
 
     expect(await listMarcas()).toEqual([
-      { saida_id: "s1", territorio_id: "t1", quadra_id: "qa", data: "2026-07-12" },
-      { saida_id: "s2", territorio_id: "t1", quadra_id: "qb", data: "2026-07-15" },
+      {
+        saida_id: "s1",
+        territorio_id: "t1",
+        quadra_id: "qa",
+        data: "2026-07-12",
+        local: "Gruta da Ilha",
+        publicador_id: "p1",
+      },
     ]);
   });
 
   it("descarta a marca cuja saída sumiu, em vez de inventar uma data", async () => {
     linhas.quadra_feita = [{ saida_id: "sumiu", territorio_id: "t1", quadra_id: "qa" }];
-    linhas.saida = [{ id: "s1", data: "2026-07-12" }];
+    linhas.saida = [
+      { id: "s1", data: "2026-07-12", local: null, publicador_id: null },
+    ];
 
     expect(await listMarcas()).toEqual([]);
+  });
+});
+
+describe("historicoDaQuadra", () => {
+  const publicadores: Publicador[] = [
+    { id: "p1", nome: "Kleber", telefone: null, created_at: "" },
+  ];
+  const passagem = (data: string, saida_id: string, publicador_id: string | null) => ({
+    ...marca("qa", data, saida_id),
+    local: "Gruta da Ilha",
+    publicador_id,
+  });
+
+  it("lista as passagens da mais recente para a mais antiga", () => {
+    const marcas = [
+      passagem("2026-06-21", "s0", "p1"),
+      passagem("2026-07-12", "s1", null),
+    ];
+    expect(historicoDaQuadra("t1", "qa", marcas, publicadores)).toEqual([
+      { data: "2026-07-12", local: "Gruta da Ilha", dirigente: null },
+      { data: "2026-06-21", local: "Gruta da Ilha", dirigente: "Kleber" },
+    ]);
+  });
+
+  it("atravessa rodadas: mostra também o que veio antes da linha de corte", () => {
+    const marcas = [passagem("2026-01-10", "s0", "p1"), passagem("2026-07-12", "s1", "p1")];
+    expect(historicoDaQuadra("t1", "qa", marcas, publicadores)).toHaveLength(2);
+  });
+
+  it("ignora as marcas de outra quadra e de outro território", () => {
+    const marcas = [
+      passagem("2026-07-12", "s1", "p1"),
+      { ...marca("qb", "2026-07-12", "s1"), local: null, publicador_id: null },
+      {
+        ...marca("qa", "2026-07-12", "s1"),
+        territorio_id: "t2",
+        local: null,
+        publicador_id: null,
+      },
+    ];
+    expect(historicoDaQuadra("t1", "qa", marcas, publicadores)).toHaveLength(1);
+  });
+
+  it("é vazio para uma quadra que nunca foi feita", () => {
+    expect(historicoDaQuadra("t1", "nunca", [], publicadores)).toEqual([]);
   });
 });
 

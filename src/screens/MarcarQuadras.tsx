@@ -7,13 +7,15 @@ import { TerritorioPolygon, type EstadoQuadra } from "../map/TerritorioPolygon";
 import { boundsDeTerritorios, listTerritorios, quadrasDe } from "../lib/territorios";
 import {
   desmarcarQuadra,
+  historicoDaQuadra,
   listMarcas,
   marcarQuadra,
   marcasDaRodada,
   type Marca,
 } from "../lib/quadras";
+import { listPublicadores } from "../lib/publicadores";
 import { buscarSaida, dataBR, diaDaSemana, DIA_SEMANA } from "../lib/saidas";
-import type { Saida, Territorio } from "../lib/types";
+import type { Publicador, Saida, Territorio } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { RadarLoader } from "../components/RadarLoader";
 
@@ -22,16 +24,23 @@ export function MarcarQuadras() {
   const [saida, setSaida] = useState<Saida | null>(null);
   const [territorio, setTerritorio] = useState<Territorio | null>(null);
   const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [publicadores, setPublicadores] = useState<Publicador[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     if (!saidaId) return;
     setCarregando(true);
-    Promise.all([buscarSaida(saidaId), listTerritorios(), listMarcas()])
-      .then(([s, todos, marcadas]) => {
+    Promise.all([
+      buscarSaida(saidaId),
+      listTerritorios(),
+      listMarcas(),
+      listPublicadores(),
+    ])
+      .then(([s, todos, marcadas, pubs]) => {
         setSaida(s);
         setTerritorio(todos.find((t) => t.id === territorioId) ?? null);
         setMarcas(marcadas);
+        setPublicadores(pubs);
       })
       .catch(() => toast.error("Não foi possível abrir a saída. Tente novamente."))
       .finally(() => setCarregando(false));
@@ -87,6 +96,8 @@ export function MarcarQuadras() {
       territorio_id: territorio.id,
       quadra_id: quadraId,
       data: saida.data,
+      local: saida.local,
+      publicador_id: saida.publicador_id,
     };
     setMarcas(
       marcada
@@ -119,6 +130,9 @@ export function MarcarQuadras() {
           limites={territorio.limites}
           estados={estados}
           onQuadraClick={alternar}
+          historicoDe={(quadraId) =>
+            historicoDaQuadra(territorio.id, quadraId, marcas, publicadores)
+          }
         />
       </BaseMap>
 

@@ -26,6 +26,8 @@ vi.mock("../lib/quadras", async (importOriginal) => ({
       territorio_id: "t1",
       quadra_id: "quadra-a",
       data: "2026-07-12",
+      local: null,
+      publicador_id: null,
     },
   ]),
 }));
