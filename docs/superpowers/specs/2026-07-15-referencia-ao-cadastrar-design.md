@@ -19,20 +19,25 @@ qualquer alteração no modo edição.
 ### Componente novo — `src/map/TerritoriosReferencia.tsx`
 
 Camada não-interativa, só visual. Recebe `territorios: Territorio[]` e monta
-duas fontes:
+uma única fonte, a partir de uma função pura `colecaoReferencia` (em
+`territorios.ts`): **um `Feature`/`MultiPolygon` por território com mapa**
+(via `geometriaDe`), carregando o `numero` nas properties. Territórios sem
+`limites` são omitidos.
 
-- **Contorno.** Uma `FeatureCollection` com as quadras de todos os territórios
-  (via `featureCollectionDe`), renderizada como uma `line` fina e apagada, sem
-  `fill` — não escurece o mapa nem compete com o desenho em andamento. Tom
-  cinza/azulado discreto.
-- **Número.** Um ponto por território, no centro do seu *bounds* (reaproveitando
-  `boundsDeTerritorios` chamado por território), com um `symbol` cujo
-  `text-field` é o `numero`, em tom suave.
+Sobre essa fonte, três camadas:
+
+- **Contorno.** Uma `line` fina e apagada (com um casing branco estreito para
+  legibilidade), **sem `fill`** — não escurece o mapa nem compete com o desenho
+  em andamento. Tom cinza discreto.
+- **Número.** Uma camada `symbol` cujo `text-field` é o `numero`; sobre feições
+  de polígono o Mapbox posiciona o rótulo automaticamente no centro de cada
+  território. Tom suave, com halo branco.
 
 Sem handlers de clique: os cliques passam direto para o `DrawControl`, então a
-referência não atrapalha o desenho. Não se reaproveita o `TerritorioPolygon` de
-propósito — ele registra clique, popup e usa ids fixos (`territorio`) que
-colidiriam com a fonte/camadas do desenho.
+referência não atrapalha o desenho. Ids de fonte/camada próprios (`referencia-*`).
+Não se reaproveita nem o `TerritorioPolygon` nem o `TerritoriosLayer` de
+propósito — ambos registram clique (e o segundo pinta `fill`), o que competiria
+com o desenho.
 
 ### Mudança em `src/screens/Cadastro.tsx`
 
