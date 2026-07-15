@@ -1,17 +1,21 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   listMarcas,
+  listParadas,
   historicoDaQuadra,
   marcasDaRodada,
+  paradasDaRodada,
+  paradaAtualDe,
   quadrasFeitasDe,
   progressoDe,
 } from "./quadras";
-import type { Marca } from "./quadras";
+import type { Marca, Parada } from "./quadras";
 import type { Publicador, Territorio } from "./types";
 
 const linhas: Record<string, unknown[]> = {
   quadra_feita: [],
   saida: [],
+  ponto_parada: [],
 };
 const selects: string[] = [];
 
@@ -63,6 +67,17 @@ const marca = (quadra_id: string, data: string, saida_id = "s1"): Marca => ({
   saida_id,
   territorio_id: "t1",
   quadra_id,
+  data,
+  local: null,
+  publicador_id: null,
+});
+
+const parada = (quadra_id: string, data: string, saida_id = "s1"): Parada => ({
+  saida_id,
+  territorio_id: "t1",
+  quadra_id,
+  lng: -46,
+  lat: -23,
   data,
   local: null,
   publicador_id: null,
@@ -198,6 +213,7 @@ describe("progressoDe", () => {
     expect(progressoDe(t, [marca("a", "2026-07-12")])).toEqual({
       feitas: 1,
       total: 3,
+      emAndamento: 0,
       concluido: false,
     });
   });
@@ -205,7 +221,12 @@ describe("progressoDe", () => {
   it("é concluído quando todas as quadras foram feitas", () => {
     const t = territorio(["a", "b"]);
     const marcas = [marca("a", "2026-07-12"), marca("b", "2026-07-12")];
-    expect(progressoDe(t, marcas)).toEqual({ feitas: 2, total: 2, concluido: true });
+    expect(progressoDe(t, marcas)).toEqual({
+      feitas: 2,
+      total: 2,
+      emAndamento: 0,
+      concluido: true,
+    });
   });
 
   it("volta a zero depois de a rodada ser zerada, sem apagar as marcas antigas", () => {
@@ -214,6 +235,7 @@ describe("progressoDe", () => {
     expect(progressoDe(zerado, marcas)).toEqual({
       feitas: 0,
       total: 2,
+      emAndamento: 0,
       concluido: false,
     });
   });
@@ -221,7 +243,12 @@ describe("progressoDe", () => {
   it("a quadra órfã não infla o total nem o feito", () => {
     const t = territorio(["a", "b"]);
     const marcas = [marca("a", "2026-07-12"), marca("sumiu", "2026-07-12")];
-    expect(progressoDe(t, marcas)).toEqual({ feitas: 1, total: 2, concluido: false });
+    expect(progressoDe(t, marcas)).toEqual({
+      feitas: 1,
+      total: 2,
+      emAndamento: 0,
+      concluido: false,
+    });
   });
 
   it("território sem limites não tem progresso nem fica concluído", () => {
@@ -229,7 +256,99 @@ describe("progressoDe", () => {
     expect(progressoDe(semLimites, [])).toEqual({
       feitas: 0,
       total: 0,
+      emAndamento: 0,
       concluido: false,
     });
+  });
+
+  it("conta como em andamento o pino de uma quadra ainda não feita", () => {
+    const t = territorio(["a", "b", "c"]);
+    const marcas = [marca("a", "2026-07-12")];
+    const paradas = [parada("b", "2026-07-12")];
+    expect(progressoDe(t, marcas, paradas)).toEqual({
+      feitas: 1,
+      total: 3,
+      emAndamento: 1,
+      concluido: false,
+    });
+  });
+});
+
+describe("listParadas", () => {
+  it("traz data, local e dirigente do pino a partir da saída dele", async () => {
+    linhas.ponto_parada = [
+      { territorio_id: "t1", quadra_id: "qa", saida_id: "s1", lng: -46.1, lat: -23.2 },
+    ];
+    linhas.saida = [
+      { id: "s1", data: "2026-07-12", local: "Gruta da Ilha", publicador_id: "p1" },
+    ];
+
+    expect(await listParadas()).toEqual([
+      {
+        territorio_id: "t1",
+        quadra_id: "qa",
+        saida_id: "s1",
+        lng: -46.1,
+        lat: -23.2,
+        data: "2026-07-12",
+        local: "Gruta da Ilha",
+        publicador_id: "p1",
+      },
+    ]);
+  });
+
+  it("descarta o pino cuja saída sumiu, em vez de inventar uma data", async () => {
+    linhas.ponto_parada = [
+      { territorio_id: "t1", quadra_id: "qa", saida_id: "sumiu", lng: -46, lat: -23 },
+    ];
+    linhas.saida = [{ id: "s1", data: "2026-07-12", local: null, publicador_id: null }];
+
+    expect(await listParadas()).toEqual([]);
+  });
+});
+
+describe("paradasDaRodada", () => {
+  it("conta tudo quando a rodada nunca foi zerada", () => {
+    const t = territorio(["a", "b"]);
+    const paradas = [parada("a", "2026-01-10"), parada("b", "2026-07-12")];
+    expect(paradasDaRodada(t, paradas)).toHaveLength(2);
+  });
+
+  it("descarta os pinos anteriores à linha de corte", () => {
+    const t = territorio(["a", "b"], "2026-07-01");
+    const paradas = [parada("a", "2026-06-28"), parada("b", "2026-07-12")];
+    expect(paradasDaRodada(t, paradas).map((p) => p.quadra_id)).toEqual(["b"]);
+  });
+
+  it("ignora pinos de outro território", () => {
+    const t = territorio(["a"]);
+    const deOutro: Parada = { ...parada("a", "2026-07-12"), territorio_id: "t2" };
+    expect(paradasDaRodada(t, [deOutro])).toEqual([]);
+  });
+});
+
+describe("paradaAtualDe", () => {
+  it("devolve o pino de uma quadra ainda não feita", () => {
+    const t = territorio(["a", "b"]);
+    const atual = paradaAtualDe(t, [], [parada("b", "2026-07-12")]);
+    expect([...atual.keys()]).toEqual(["b"]);
+  });
+
+  it("exclui o pino de uma quadra que já está feita (feita vence)", () => {
+    const t = territorio(["a", "b"]);
+    const atual = paradaAtualDe(t, [marca("b", "2026-07-12")], [parada("b", "2026-07-12")]);
+    expect(atual.size).toBe(0);
+  });
+
+  it("exclui o pino de uma saída anterior à linha de corte", () => {
+    const t = territorio(["a"], "2026-07-01");
+    const atual = paradaAtualDe(t, [], [parada("a", "2026-06-28")]);
+    expect(atual.size).toBe(0);
+  });
+
+  it("exclui o pino de uma quadra que não existe mais no desenho", () => {
+    const t = territorio(["a"]);
+    const atual = paradaAtualDe(t, [], [parada("sumiu", "2026-07-12")]);
+    expect(atual.size).toBe(0);
   });
 });
