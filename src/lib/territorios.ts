@@ -53,6 +53,24 @@ export function geometriaDe(limites: Limites | null): GeoJSON.MultiPolygon | nul
   return { type: "MultiPolygon", coordinates: quadras.map((q) => q.coordinates) };
 }
 
+export function colecaoReferencia(
+  territorios: Territorio[],
+): GeoJSON.FeatureCollection<GeoJSON.MultiPolygon> {
+  return {
+    type: "FeatureCollection",
+    features: territorios
+      .map((t) => ({ t, geometry: geometriaDe(t.limites) }))
+      .filter(
+        (x): x is { t: Territorio; geometry: GeoJSON.MultiPolygon } => !!x.geometry,
+      )
+      .map(({ t, geometry }) => ({
+        type: "Feature",
+        geometry,
+        properties: { numero: t.numero },
+      })),
+  };
+}
+
 export function featureCollectionDe(limites: Limites | null): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",

@@ -5,6 +5,7 @@ import {
   quadrasDe,
   limitesDe,
   featureCollectionDe,
+  colecaoReferencia,
 } from "./territorios";
 import type { Territorio, Designacao } from "./types";
 
@@ -220,5 +221,29 @@ describe("featureCollectionDe", () => {
     const fc = featureCollectionDe(colecao(["qa", quadrado(-46, -23)]));
     expect(fc.features[0].id).toBe("qa");
     expect(fc.features[0].properties?.id).toBe("qa");
+  });
+});
+
+describe("colecaoReferencia", () => {
+  it("gera uma feature por território com mapa, carregando o número", () => {
+    const ts: Territorio[] = [
+      { ...base, id: "t1", numero: "12", limites: quadrado(-46, -23) },
+      { ...base, id: "t2", numero: "13", limites: quadrado(-45, -22) },
+    ];
+    const fc = colecaoReferencia(ts);
+    expect(fc.type).toBe("FeatureCollection");
+    expect(fc.features).toHaveLength(2);
+    expect(fc.features[0].geometry.type).toBe("MultiPolygon");
+    expect(fc.features.map((f) => f.properties?.numero)).toEqual(["12", "13"]);
+  });
+
+  it("omite territórios sem mapa", () => {
+    const ts: Territorio[] = [
+      { ...base, id: "t1", numero: "12", limites: null },
+      { ...base, id: "t2", numero: "13", limites: quadrado(-45, -22) },
+    ];
+    const fc = colecaoReferencia(ts);
+    expect(fc.features).toHaveLength(1);
+    expect(fc.features[0].properties?.numero).toBe("13");
   });
 });
