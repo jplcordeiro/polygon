@@ -8,6 +8,8 @@ import {
   type Marca,
 } from "../lib/quadras";
 import { MES_NOME, mesVizinho, type Mes } from "../lib/saidas";
+import { listRodadas } from "../lib/rodadas";
+import type { Rodada } from "../lib/types";
 import type { Territorio } from "../lib/types";
 import { TerritorioGlyph } from "./TerritorioGlyph";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,7 @@ import { Button } from "@/components/ui/button";
 export function Relatorio() {
   const [territorios, setTerritorios] = useState<Territorio[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [mes, setMes] = useState<Mes>(() => {
     const d = new Date();
@@ -22,15 +25,16 @@ export function Relatorio() {
   });
 
   useEffect(() => {
-    Promise.all([listTerritorios(), listMarcas()])
-      .then(([t, m]) => {
+    Promise.all([listTerritorios(), listMarcas(), listRodadas()])
+      .then(([t, m, r]) => {
         setTerritorios(t);
         setMarcas(m);
+        setRodadas(r);
       })
       .finally(() => setCarregando(false));
   }, []);
 
-  const relatorio = relatorioDoMes(mes, territorios, marcas);
+  const relatorio = relatorioDoMes(mes, territorios, marcas, rodadas);
 
   return (
     <div className="folha mx-auto grid max-w-220 gap-[clamp(16px,3vw,26px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
@@ -150,6 +154,7 @@ export function Relatorio() {
               </li>
             ))}
           </ul>
+
         </>
       )}
     </div>

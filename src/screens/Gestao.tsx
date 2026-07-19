@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listTerritorios, excluirTerritorio } from "../lib/territorios";
 import {
-  iniciarNovaRodada,
   listMarcas,
   listParadas,
   paradaAtualDe,
@@ -11,9 +10,16 @@ import {
   type Marca,
   type Parada,
 } from "../lib/quadras";
+import {
+  comRodada,
+  comecarRodada,
+  comecarRodadaEmTodos,
+  hojeISO,
+  listRodadas,
+} from "../lib/rodadas";
 import { listPublicadores } from "../lib/publicadores";
 import { designacoesAbertas, devolver } from "../lib/designacoes";
-import type { Territorio, Publicador, Designacao } from "../lib/types";
+import type { Territorio, Publicador, Designacao, Rodada } from "../lib/types";
 import { MapPin } from "lucide-react";
 import { TerritorioGlyph } from "./TerritorioGlyph";
 import { Button } from "@/components/ui/button";
@@ -41,22 +47,28 @@ export function Gestao() {
   const [abertas, setAbertas] = useState<Designacao[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [paradas, setParadas] = useState<Parada[]>([]);
+  const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [ofertaRodada, setOfertaRodada] = useState<Territorio | null>(null);
+  const [campanha, setCampanha] = useState(false);
+  const [inicioCampanha, setInicioCampanha] = useState(hojeISO());
+  const [nomeCampanha, setNomeCampanha] = useState("");
   const [carregando, setCarregando] = useState(true);
 
   async function carregar() {
-    const [t, p, d, m, pp] = await Promise.all([
+    const [t, p, d, m, pp, r] = await Promise.all([
       listTerritorios(),
       listPublicadores(),
       designacoesAbertas(),
       listMarcas(),
       listParadas(),
+      listRodadas(),
     ]);
     setTerritorios(t);
     setPublicadores(p);
     setAbertas(d);
     setMarcas(m);
     setParadas(pp);
+    setRodadas(r);
   }
   useEffect(() => {
     carregar().finally(() => setCarregando(false));
@@ -69,8 +81,25 @@ export function Gestao() {
   async function novaRodada(t: Territorio) {
     setOfertaRodada(null);
     try {
-      await iniciarNovaRodada(t.id);
+      await comecarRodada(t.id);
       toast.success(`Território Nº ${t.numero}: nova rodada começada.`);
+      carregar();
+    } catch {
+      toast.error("Não foi possível começar a nova rodada. Tente novamente.");
+    }
+  }
+
+  async function novaCampanha() {
+    setCampanha(false);
+    try {
+      await comecarRodadaEmTodos(
+        territorios.map((t) => t.id),
+        inicioCampanha,
+        nomeCampanha.trim() || null,
+      );
+      toast.success(
+        `Nova rodada começada em ${territorios.length} territórios.`,
+      );
       carregar();
     } catch {
       toast.error("Não foi possível começar a nova rodada. Tente novamente.");
@@ -100,9 +129,23 @@ export function Gestao() {
           <h2 className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-ink-soft">
             Territórios
           </h2>
-          <Button asChild>
-            <Link to="/cadastro">Cadastrar território</Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {territorios.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setInicioCampanha(hojeISO());
+                  setNomeCampanha("");
+                  setCampanha(true);
+                }}
+              >
+                Nova rodada em todos
+              </Button>
+            )}
+            <Button asChild>
+              <Link to="/cadastro">Cadastrar território</Link>
+            </Button>
+          </div>
         </div>
 
         {carregando ? (
@@ -133,8 +176,9 @@ export function Gestao() {
           <ul className="grid grid-cols-1 gap-3 min-[620px]:grid-cols-2">
             {territorios.map((t) => {
               const d = abertaDe(t.id);
-              const progresso = progressoDe(t, marcas, paradas);
-              const emAndamento = paradaAtualDe(t, marcas, paradas);
+              const emRodada = comRodada(t, rodadas);
+              const progresso = progressoDe(emRodada, marcas, paradas);
+              const emAndamento = paradaAtualDe(emRodada, marcas, paradas);
               return (
                 <li
                   key={t.id}
@@ -149,7 +193,7 @@ export function Gestao() {
                   >
                     <TerritorioGlyph
                       limites={t.limites}
-                      feitas={quadrasFeitasDe(t, marcas)}
+                      feitas={quadrasFeitasDe(emRodada, marcas)}
                       andamento={new Set(emAndamento.keys())}
                     />
                   </Link>
@@ -213,11 +257,13 @@ export function Gestao() {
                       </Button>
                     )}
 
-                    {progresso.concluido && (
-                      <Button size="sm" onClick={() => novaRodada(t)}>
-                        Começar nova rodada
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant={progresso.concluido ? "default" : "outline"}
+                      onClick={() => novaRodada(t)}
+                    >
+                      Começar nova rodada
+                    </Button>
 
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/cadastro/${t.id}`}>Editar</Link>
@@ -284,6 +330,48 @@ export function Gestao() {
               onClick={() => ofertaRodada && novaRodada(ofertaRodada)}
             >
               Começar nova rodada
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={campanha} onOpenChange={setCampanha}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Começar nova rodada em {territorios.length}{" "}
+              {territorios.length === 1 ? "território" : "territórios"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              A contagem de todos recomeça do zero a partir da data escolhida. As
+              marcas antigas continuam guardadas e os meses já fechados não mudam.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-3">
+            <label className="grid gap-1.5 text-[0.82rem] font-medium text-ink">
+              A rodada começa em
+              <input
+                type="date"
+                value={inicioCampanha}
+                onChange={(e) => setInicioCampanha(e.target.value)}
+                className="w-fit rounded-md border border-line bg-white px-2.5 py-1.5 text-[0.9rem] font-normal tabular-nums text-ink"
+              />
+            </label>
+            <label className="grid gap-1.5 text-[0.82rem] font-medium text-ink">
+              Nome da campanha (opcional)
+              <input
+                type="text"
+                value={nomeCampanha}
+                onChange={(e) => setNomeCampanha(e.target.value)}
+                placeholder="Convites do congresso"
+                className="rounded-md border border-line bg-white px-2.5 py-1.5 text-[0.9rem] font-normal text-ink"
+              />
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={novaCampanha}>
+              Começar em todos
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

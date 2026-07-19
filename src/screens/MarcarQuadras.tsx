@@ -18,12 +18,23 @@ import {
   type Marca,
   type Parada,
 } from "../lib/quadras";
+import { comRodada, comecarRodada, listRodadas } from "../lib/rodadas";
 import { listPublicadores } from "../lib/publicadores";
 import { buscarSaida, dataBR, diaDaSemana, DIA_SEMANA } from "../lib/saidas";
-import type { Publicador, Saida, Territorio } from "../lib/types";
+import type { Publicador, Rodada, Saida, Territorio } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RadarLoader } from "../components/RadarLoader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Modo = "feita" | "parada";
 
@@ -34,7 +45,9 @@ export function MarcarQuadras() {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [paradas, setParadas] = useState<Parada[]>([]);
   const [publicadores, setPublicadores] = useState<Publicador[]>([]);
+  const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [modo, setModo] = useState<Modo>("feita");
+  const [confirmarRodada, setConfirmarRodada] = useState(false);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -46,13 +59,15 @@ export function MarcarQuadras() {
       listMarcas(),
       listParadas(),
       listPublicadores(),
+      listRodadas(),
     ])
-      .then(([s, todos, marcadas, paradasList, pubs]) => {
+      .then(([s, todos, marcadas, paradasList, pubs, rods]) => {
         setSaida(s);
         setTerritorio(todos.find((t) => t.id === territorioId) ?? null);
         setMarcas(marcadas);
         setParadas(paradasList);
         setPublicadores(pubs);
+        setRodadas(rods);
       })
       .catch(() => toast.error("Não foi possível abrir a saída. Tente novamente."))
       .finally(() => setCarregando(false));
@@ -77,14 +92,15 @@ export function MarcarQuadras() {
     );
   }
 
-  const daRodada = marcasDaRodada(territorio, marcas);
+  const emRodada = comRodada(territorio, rodadas);
+  const daRodada = marcasDaRodada(emRodada, marcas);
   const desteDia = new Map(
     daRodada.filter((m) => m.saida_id === saida.id).map((m) => [m.quadra_id, m]),
   );
   const deOutroDia = new Map(
     daRodada.filter((m) => m.saida_id !== saida.id).map((m) => [m.quadra_id, m]),
   );
-  const paradaAtual = paradaAtualDe(territorio, marcas, paradas);
+  const paradaAtual = paradaAtualDe(emRodada, marcas, paradas);
 
   const quadras = quadrasDe(territorio.limites);
   const estados: Record<string, EstadoQuadra> = {};
@@ -185,11 +201,31 @@ export function MarcarQuadras() {
   ) {
     const jaFeitaEmOutra = deOutroDia.get(quadraId);
     if (jaFeitaEmOutra) {
-      toast.info(`Esta quadra já foi feita na saída de ${dataBR(jaFeitaEmOutra.data)}.`);
+      toast.info(
+        `Esta quadra já foi feita na saída de ${dataBR(jaFeitaEmOutra.data)}.`,
+        {
+          action: {
+            label: "Começar nova rodada",
+            onClick: () => setConfirmarRodada(true),
+          },
+        },
+      );
       return;
     }
     if (modo === "feita") await marcarFeita(quadraId);
     else await marcarParada(quadraId, lngLat);
+  }
+
+  async function novaRodadaAqui() {
+    if (!saida || !territorio) return;
+    setConfirmarRodada(false);
+    try {
+      await comecarRodada(territorio.id, saida.data);
+      setRodadas(await listRodadas());
+      toast.success(`Nova rodada começada em ${dataBR(saida.data)}.`);
+    } catch {
+      toast.error("Não foi possível começar a nova rodada. Tente novamente.");
+    }
   }
 
   async function removerPino(quadraId: string) {
@@ -284,6 +320,27 @@ export function MarcarQuadras() {
           </span>
         </div>
       </div>
+
+      <AlertDialog open={confirmarRodada} onOpenChange={setConfirmarRodada}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Começar nova rodada no Território Nº {territorio.numero}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              A contagem recomeça do zero a partir de {dataBR(saida.data)}, a data
+              desta saída, para que o que você marcar hoje entre na rodada nova. As
+              marcas antigas continuam guardadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={novaRodadaAqui}>
+              Começar nova rodada
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

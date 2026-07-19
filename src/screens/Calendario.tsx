@@ -20,6 +20,8 @@ import {
 } from "../lib/saidas";
 import { listTerritorios, quadrasDe } from "../lib/territorios";
 import { listMarcas, marcasDaRodada, type Marca } from "../lib/quadras";
+import { comRodada, listRodadas } from "../lib/rodadas";
+import type { Rodada } from "../lib/types";
 import { listPublicadores } from "../lib/publicadores";
 import type { Publicador, Saida, Territorio } from "../lib/types";
 import { TerritorioGlyph } from "./TerritorioGlyph";
@@ -75,6 +77,7 @@ export function Calendario() {
   const [territorios, setTerritorios] = useState<Territorio[]>([]);
   const [publicadores, setPublicadores] = useState<Publicador[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [nota, setNota] = useState("");
   const [notaSalva, setNotaSalva] = useState("");
   const [diaAberto, setDiaAberto] = useState<string | null>(null);
@@ -84,12 +87,13 @@ export function Calendario() {
   const grade = gradeDoMes(mes);
 
   async function carregar() {
-    const [s, t, p, n, m] = await Promise.all([
+    const [s, t, p, n, m, r] = await Promise.all([
       listSaidas(grade[0], grade[grade.length - 1]),
       listTerritorios(),
       listPublicadores(),
       notaDoMes(mes),
       listMarcas(),
+      listRodadas(),
     ]);
     setSaidas(s);
     setTerritorios(t);
@@ -97,6 +101,7 @@ export function Calendario() {
     setNota(n);
     setNotaSalva(n);
     setMarcas(m);
+    setRodadas(r);
   }
 
   useEffect(() => {
@@ -194,7 +199,7 @@ export function Calendario() {
           const t = territorioDe(id);
           if (!t) return null;
           const total = quadrasDe(t.limites).length;
-          const feitas = marcasDaRodada(t, marcas).filter(
+          const feitas = marcasDaRodada(comRodada(t, rodadas), marcas).filter(
             (m) => m.saida_id === s.id,
           ).length;
           return (

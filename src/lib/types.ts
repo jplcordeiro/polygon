@@ -9,7 +9,14 @@ export interface Territorio {
   nome: string | null;
   limites: Limites | null;
   ativo: boolean;
-  progresso_desde: string | null;
+  created_at: string;
+}
+
+export interface Rodada {
+  id: string;
+  territorio_id: string;
+  inicio: string;
+  nome: string | null;
   created_at: string;
 }
 

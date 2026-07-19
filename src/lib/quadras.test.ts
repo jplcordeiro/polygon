@@ -10,7 +10,8 @@ import {
   progressoDe,
 } from "./quadras";
 import type { Marca, Parada } from "./quadras";
-import type { Publicador, Territorio } from "./types";
+import type { EmRodada } from "./rodadas";
+import type { Publicador } from "./types";
 
 const linhas: Record<string, unknown[]> = {
   quadra_feita: [],
@@ -44,7 +45,7 @@ function quadrado(lng: number, lat: number): GeoJSON.Polygon {
   };
 }
 
-function territorio(ids: string[], progresso_desde: string | null = null): Territorio {
+function territorio(ids: string[], inicio: string | null = null): EmRodada {
   return {
     id: "t1",
     numero: "6",
@@ -58,7 +59,7 @@ function territorio(ids: string[], progresso_desde: string | null = null): Terri
       })),
     },
     ativo: true,
-    progresso_desde,
+    inicio,
     created_at: "",
   };
 }
@@ -252,7 +253,7 @@ describe("progressoDe", () => {
   });
 
   it("território sem limites não tem progresso nem fica concluído", () => {
-    const semLimites: Territorio = { ...territorio([]), limites: null };
+    const semLimites: EmRodada = { ...territorio([]), limites: null };
     expect(progressoDe(semLimites, [])).toEqual({
       feitas: 0,
       total: 0,

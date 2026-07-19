@@ -39,7 +39,6 @@ function territorio(numero: string, ...ids: string[]): Territorio {
       ...ids.map((id, i): [string, GeoJSON.Polygon] => [id, quadrado(-46 - i, -23)]),
     ),
     ativo: true,
-    progresso_desde: null,
     created_at: "",
   };
 }

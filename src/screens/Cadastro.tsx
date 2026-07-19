@@ -18,6 +18,7 @@ import {
   boundsDeTerritorios,
 } from "../lib/territorios";
 import { listMarcas, progressoDe } from "../lib/quadras";
+import { comRodada, listRodadas } from "../lib/rodadas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -118,8 +119,8 @@ export function Cadastro() {
 
   useEffect(() => {
     if (id) {
-      Promise.all([listTerritorios(), listMarcas()])
-        .then(([todos, marcas]) => {
+      Promise.all([listTerritorios(), listMarcas(), listRodadas()])
+        .then(([todos, marcas, rodadas]) => {
           const t = todos.find((x) => x.id === id);
           if (!t) {
             toast.error("Território não encontrado.");
@@ -134,7 +135,7 @@ export function Cadastro() {
           setSalvo(estadoDe(t.numero, t.nome ?? "", limites));
           setDesenhoInicial(desenho);
           setEnquadramento(boundsDeTerritorios([t]) ?? undefined);
-          setMarcadas(progressoDe(t, marcas).feitas);
+          setMarcadas(progressoDe(comRodada(t, rodadas), marcas).feitas);
           setMapaPronto(true);
         })
         .catch(() => {

@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Gestao } from "./Gestao";
 import type { Marca, Parada } from "../lib/quadras";
-import type { Territorio } from "../lib/types";
+import type { Rodada, Territorio } from "../lib/types";
 
 const { quadra } = vi.hoisted(() => ({
   quadra: (id: string, lng: number): GeoJSON.Feature<GeoJSON.Polygon> => ({
@@ -32,7 +32,6 @@ const territorio: Territorio = {
     features: [quadra("qa", -46), quadra("qb", -44)],
   },
   ativo: true,
-  progresso_desde: null,
   created_at: "",
 };
 
@@ -60,7 +59,16 @@ vi.mock("../lib/quadras", async (orig) => {
     ...actual,
     listMarcas: vi.fn().mockResolvedValue([]),
     listParadas: vi.fn().mockResolvedValue([]),
-    iniciarNovaRodada: vi.fn().mockResolvedValue(undefined),
+  };
+});
+vi.mock("../lib/rodadas", async (orig) => {
+  const actual = await (orig() as Promise<Record<string, unknown>>);
+  return {
+    ...actual,
+    listRodadas: vi.fn().mockResolvedValue([]),
+    comecarRodada: vi.fn().mockResolvedValue(undefined),
+    comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
+    hojeISO: () => "2026-07-19",
   };
 });
 
@@ -88,12 +96,15 @@ async function montar(
   marcas: Marca[] = [],
   t: Territorio = territorio,
   paradas: Parada[] = [],
+  rodadas: Rodada[] = [],
 ) {
   const { listTerritorios } = await import("../lib/territorios");
   const { listMarcas, listParadas } = await import("../lib/quadras");
+  const { listRodadas } = await import("../lib/rodadas");
   vi.mocked(listTerritorios).mockResolvedValue([t]);
   vi.mocked(listMarcas).mockResolvedValue(marcas);
   vi.mocked(listParadas).mockResolvedValue(paradas);
+  vi.mocked(listRodadas).mockResolvedValue(rodadas);
   render(
     <MemoryRouter>
       <Gestao />
@@ -125,25 +136,47 @@ describe("Gestao", () => {
     ).toBeInTheDocument();
   });
 
-  it("não oferece nova rodada enquanto faltam quadras", async () => {
+  it("oferece nova rodada mesmo com quadras faltando", async () => {
     await montar([marca("qa")]);
     expect(
-      screen.queryByRole("button", { name: /começar nova rodada/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: /começar nova rodada/i }),
+    ).toBeInTheDocument();
   });
 
-  it("começar nova rodada move a linha de corte do território", async () => {
-    const { iniciarNovaRodada } = await import("../lib/quadras");
+  it("começar nova rodada registra uma rodada do território", async () => {
+    const { comecarRodada } = await import("../lib/rodadas");
     await montar([marca("qa"), marca("qb")]);
 
     fireEvent.click(screen.getByRole("button", { name: /começar nova rodada/i }));
 
-    await waitFor(() => expect(iniciarNovaRodada).toHaveBeenCalledWith("t1"));
+    await waitFor(() => expect(comecarRodada).toHaveBeenCalledWith("t1"));
+  });
+
+  it("a campanha registra a rodada em todos com data e nome", async () => {
+    const { comecarRodadaEmTodos } = await import("../lib/rodadas");
+    await montar([marca("qa")]);
+
+    fireEvent.click(screen.getByRole("button", { name: /nova rodada em todos/i }));
+    fireEvent.change(await screen.findByLabelText(/a rodada começa em/i), {
+      target: { value: "2026-07-18" },
+    });
+    fireEvent.change(screen.getByLabelText(/nome da campanha/i), {
+      target: { value: "Convites do congresso" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /começar em todos/i }));
+
+    await waitFor(() =>
+      expect(comecarRodadaEmTodos).toHaveBeenCalledWith(
+        ["t1"],
+        "2026-07-18",
+        "Convites do congresso",
+      ),
+    );
   });
 
   it("devolver um território concluído oferece começar a nova rodada", async () => {
     const { designacoesAbertas } = await import("../lib/designacoes");
-    const { iniciarNovaRodada } = await import("../lib/quadras");
+    const { comecarRodada } = await import("../lib/rodadas");
     vi.mocked(designacoesAbertas).mockResolvedValue([
       {
         id: "d1",
@@ -164,7 +197,7 @@ describe("Gestao", () => {
     await waitFor(() =>
       expect(screen.queryByText(/começar nova rodada\?/i)).not.toBeInTheDocument(),
     );
-    expect(iniciarNovaRodada).not.toHaveBeenCalled();
+    expect(comecarRodada).not.toHaveBeenCalled();
   });
 
   it("mostra quantas quadras estão em andamento além das feitas", async () => {
@@ -173,8 +206,14 @@ describe("Gestao", () => {
   });
 
   it("depois de zerada, a rodada volta a zero sem perder as marcas antigas", async () => {
-    const zerado = { ...territorio, progresso_desde: "2026-07-13" };
-    await montar([marca("qa"), marca("qb")], zerado);
+    const rodada: Rodada = {
+      id: "r1",
+      territorio_id: "t1",
+      inicio: "2026-07-13",
+      nome: null,
+      created_at: "",
+    };
+    await montar([marca("qa"), marca("qb")], territorio, [], [rodada]);
 
     expect(screen.getByText("0/2 quadras")).toBeInTheDocument();
     expect(screen.queryByText(/concluído/i)).not.toBeInTheDocument();

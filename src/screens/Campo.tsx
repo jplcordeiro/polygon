@@ -12,8 +12,9 @@ import {
   quadrasFeitasDe,
 } from "../lib/quadras";
 import type { Marca, Parada } from "../lib/quadras";
+import { comRodada, listRodadas } from "../lib/rodadas";
 import { listPublicadores } from "../lib/publicadores";
-import type { Publicador, Territorio } from "../lib/types";
+import type { Publicador, Rodada, Territorio } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { RadarLoader } from "../components/RadarLoader";
 
@@ -23,16 +24,24 @@ export function Campo() {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [paradas, setParadas] = useState<Parada[]>([]);
   const [publicadores, setPublicadores] = useState<Publicador[]>([]);
+  const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     setCarregando(true);
-    Promise.all([listTerritorios(), listMarcas(), listParadas(), listPublicadores()])
-      .then(([todos, marcadas, paradasList, pubs]) => {
+    Promise.all([
+      listTerritorios(),
+      listMarcas(),
+      listParadas(),
+      listPublicadores(),
+      listRodadas(),
+    ])
+      .then(([todos, marcadas, paradasList, pubs, rods]) => {
         setT(todos.find((x) => x.id === id) ?? null);
         setMarcas(marcadas);
         setParadas(paradasList);
         setPublicadores(pubs);
+        setRodadas(rods);
       })
       .finally(() => setCarregando(false));
   }, [id]);
@@ -72,9 +81,10 @@ export function Campo() {
     );
 
   const bounds = boundsDeTerritorios([t]);
-  const paradaAtual = paradaAtualDe(t, marcas, paradas);
+  const emRodada = comRodada(t, rodadas);
+  const paradaAtual = paradaAtualDe(emRodada, marcas, paradas);
   const estados: Record<string, EstadoQuadra> = {};
-  for (const quadraId of quadrasFeitasDe(t, marcas)) estados[quadraId] = "feita";
+  for (const quadraId of quadrasFeitasDe(emRodada, marcas)) estados[quadraId] = "feita";
   for (const quadraId of paradaAtual.keys()) estados[quadraId] = "andamento";
   const pinos = [...paradaAtual.values()].map((p) => ({
     quadraId: p.quadra_id,

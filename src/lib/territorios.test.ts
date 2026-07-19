@@ -50,7 +50,6 @@ const base: Territorio = {
   nome: null,
   limites: null,
   ativo: true,
-  progresso_desde: null,
   created_at: "",
 };
 

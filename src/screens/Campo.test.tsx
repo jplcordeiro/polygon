@@ -82,10 +82,17 @@ vi.mock("../lib/territorios", async (importOriginal) => ({
         ],
       },
       ativo: true,
-      progresso_desde: null,
+     
       created_at: "",
     },
   ]),
+}));
+
+vi.mock("../lib/rodadas", async (orig) => ({
+  ...(await (orig() as Promise<Record<string, unknown>>)),
+  listRodadas: vi.fn().mockResolvedValue([]),
+  comecarRodada: vi.fn().mockResolvedValue(undefined),
+  comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("Campo", () => {

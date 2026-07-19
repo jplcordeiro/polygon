@@ -46,7 +46,7 @@ vi.mock("../lib/territorios", async (orig) => {
   return {
     ...actual,
     listTerritorios: vi.fn().mockResolvedValue([
-      { id: "t1", numero: "6", nome: "Centro", limites: null, ativo: true, progresso_desde: null, created_at: "" },
+      { id: "t1", numero: "6", nome: "Centro", limites: null, ativo: true, created_at: "" },
     ]),
   };
 });
@@ -67,6 +67,13 @@ function montar() {
     </MemoryRouter>,
   );
 }
+
+vi.mock("../lib/rodadas", async (orig) => ({
+  ...(await (orig() as Promise<Record<string, unknown>>)),
+  listRodadas: vi.fn().mockResolvedValue([]),
+  comecarRodada: vi.fn().mockResolvedValue(undefined),
+  comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("Calendario", () => {
   it("mostra o ponto de encontro, o dirigente e o território da saída", async () => {

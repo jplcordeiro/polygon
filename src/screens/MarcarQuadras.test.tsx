@@ -59,7 +59,6 @@ vi.mock("../lib/territorios", async (importOriginal) => {
           features: [quadra("qa", -46), quadra("qb", -44), quadra("qc", -42)],
         },
         ativo: true,
-        progresso_desde: null,
         created_at: "",
       },
     ]),
@@ -116,6 +115,13 @@ async function renderTela() {
   );
   await waitFor(() => expect(screen.getByTestId("poly")).toBeInTheDocument());
 }
+
+vi.mock("../lib/rodadas", async (orig) => ({
+  ...(await (orig() as Promise<Record<string, unknown>>)),
+  listRodadas: vi.fn().mockResolvedValue([]),
+  comecarRodada: vi.fn().mockResolvedValue(undefined),
+  comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("MarcarQuadras", () => {
   beforeEach(async () => {
@@ -188,6 +194,9 @@ describe("MarcarQuadras", () => {
     expect(desmarcarQuadra).not.toHaveBeenCalled();
     expect(toastInfo).toHaveBeenCalledWith(
       expect.stringContaining("05/07/2026"),
+      expect.objectContaining({
+        action: expect.objectContaining({ label: "Começar nova rodada" }),
+      }),
     );
     expect(props.estados?.qb).toBe("outra");
   });

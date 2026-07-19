@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
 import { quadrasDe } from "./territorios";
 import { mesmoMes, type Mes } from "./saidas";
-import type { Publicador, Territorio } from "./types";
+import { comRodada, type EmRodada } from "./rodadas";
+import type { Publicador, Rodada, Territorio } from "./types";
 
 export interface Marca {
   saida_id: string;
@@ -36,14 +37,13 @@ export interface Progresso {
   concluido: boolean;
 }
 
-export function marcasDaRodada(t: Territorio, marcas: Marca[]): Marca[] {
+export function marcasDaRodada(t: EmRodada, marcas: Marca[]): Marca[] {
   return marcas.filter(
-    (m) =>
-      m.territorio_id === t.id && (!t.progresso_desde || m.data >= t.progresso_desde),
+    (m) => m.territorio_id === t.id && (!t.inicio || m.data >= t.inicio),
   );
 }
 
-export function quadrasFeitasDe(t: Territorio, marcas: Marca[]): Set<string> {
+export function quadrasFeitasDe(t: EmRodada, marcas: Marca[]): Set<string> {
   const existentes = new Set(quadrasDe(t.limites).map((q) => q.id));
   return new Set(
     marcasDaRodada(t, marcas)
@@ -52,15 +52,14 @@ export function quadrasFeitasDe(t: Territorio, marcas: Marca[]): Set<string> {
   );
 }
 
-export function paradasDaRodada(t: Territorio, paradas: Parada[]): Parada[] {
+export function paradasDaRodada(t: EmRodada, paradas: Parada[]): Parada[] {
   return paradas.filter(
-    (p) =>
-      p.territorio_id === t.id && (!t.progresso_desde || p.data >= t.progresso_desde),
+    (p) => p.territorio_id === t.id && (!t.inicio || p.data >= t.inicio),
   );
 }
 
 export function paradaAtualDe(
-  t: Territorio,
+  t: EmRodada,
   marcas: Marca[],
   paradas: Parada[],
 ): Map<string, Parada> {
@@ -89,7 +88,7 @@ export function historicoDaQuadra(
 }
 
 export function progressoDe(
-  t: Territorio,
+  t: EmRodada,
   marcas: Marca[],
   paradas: Parada[] = [],
 ): Progresso {
@@ -100,7 +99,7 @@ export function progressoDe(
 }
 
 export interface LinhaRelatorio {
-  territorio: Territorio;
+  territorio: EmRodada;
   feitasNoMes: number;
   total: number;
   concluidoNoMes: boolean;
@@ -116,6 +115,7 @@ export function relatorioDoMes(
   m: Mes,
   territorios: Territorio[],
   marcas: Marca[],
+  rodadas: Rodada[] = [],
 ): RelatorioMes {
   const linhas: LinhaRelatorio[] = [];
   for (const t of territorios) {
@@ -133,10 +133,11 @@ export function relatorioDoMes(
         .map((mk) => mk.quadra_id),
     ).size;
 
-    const daRodada = marcasDaRodada(t, marcas).filter((mk) =>
+    const emRodada = comRodada(t, rodadas);
+    const daRodada = marcasDaRodada(emRodada, marcas).filter((mk) =>
       existentes.has(mk.quadra_id),
     );
-    const feitasRodada = quadrasFeitasDe(t, marcas).size;
+    const feitasRodada = quadrasFeitasDe(emRodada, marcas).size;
     const ultimaData = daRodada.reduce<string | null>(
       (max, mk) => (max === null || mk.data > max ? mk.data : max),
       null,
@@ -148,7 +149,12 @@ export function relatorioDoMes(
       mesmoMes(ultimaData, m);
 
     if (feitasNoMes > 0 || concluidoNoMes) {
-      linhas.push({ territorio: t, feitasNoMes, total, concluidoNoMes });
+      linhas.push({
+        territorio: comRodada(t, rodadas),
+        feitasNoMes,
+        total,
+        concluidoNoMes,
+      });
     }
   }
   return {
@@ -255,14 +261,3 @@ export async function desmarcarQuadra(
   if (error) throw error;
 }
 
-export async function iniciarNovaRodada(territorio_id: string): Promise<void> {
-  const hoje = new Date();
-  const data = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(
-    hoje.getDate(),
-  ).padStart(2, "0")}`;
-  const { error } = await supabase
-    .from("territorio")
-    .update({ progresso_desde: data })
-    .eq("id", territorio_id);
-  if (error) throw error;
-}
