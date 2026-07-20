@@ -200,4 +200,10 @@
   .folha-agenda {
     display: none !important;
   }
+  details > summary ~ * {
+    display: revert !important;
+  }
+  details::details-content {
+    content-visibility: visible !important;
+  }
 }
