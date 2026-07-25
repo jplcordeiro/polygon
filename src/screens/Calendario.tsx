@@ -235,7 +235,7 @@ export function Calendario() {
   }
 
   return (
-    <div className="folha mx-auto grid max-w-300 gap-[clamp(16px,3vw,26px)] px-[clamp(12px,3vw,32px)] pt-[clamp(16px,4vw,36px)] pb-6">
+    <div className="folha mx-auto grid max-w-300 gap-[clamp(16px,3vw,26px)] px-[clamp(12px,3vw,32px)] pt-[clamp(16px,4vw,36px)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div className="nao-imprime flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={() => window.print()}>
@@ -472,7 +472,7 @@ export function Calendario() {
         </>
       )}
 
-      <div className="nao-imprime pointer-events-none sticky bottom-4 z-20 flex justify-center sm:hidden">
+      <div className="nao-imprime pointer-events-none sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 flex justify-center sm:hidden">
         <Button
           size="lg"
           className="pointer-events-auto shadow-card"
