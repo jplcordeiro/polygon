@@ -88,12 +88,15 @@ describe("geração real do PDF", () => {
 });
 
 const AGOSTO = { ano: 2026, mes: 8 };
+const SETEMBRO = { ano: 2026, mes: 9 };
 
-function saidasDoMes(porDia: (diaDaSemana: number) => number) {
+function saidasDoMes(m: { ano: number; mes: number }, porDia: (diaDaSemana: number) => number) {
   const saidas = [];
   for (let dia = 1; dia <= 31; dia++) {
-    const data = `2026-08-${String(dia).padStart(2, "0")}`;
-    const quantas = porDia(new Date(2026, 7, dia).getDay());
+    const d = new Date(m.ano, m.mes - 1, dia);
+    if (d.getMonth() !== m.mes - 1) break;
+    const data = `${m.ano}-${String(m.mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+    const quantas = porDia(d.getDay());
     for (let k = 0; k < quantas; k++) {
       saidas.push({
         id: `s-${data}-${k}`,
@@ -119,10 +122,13 @@ const TERRITORIOS = ["6", "12", "23"].map((numero, i) => ({
   created_at: "",
 }));
 
-function escalaPesada(porDia: (diaDaSemana: number) => number): Escala {
+function escalaPesada(
+  porDia: (diaDaSemana: number) => number,
+  m: { ano: number; mes: number } = AGOSTO,
+): Escala {
   return escalaDoMes(
-    AGOSTO,
-    saidasDoMes(porDia),
+    m,
+    saidasDoMes(m, porDia),
     TERRITORIOS,
     [{ id: "p1", nome: "Kleber Aparecido de Oliveira", telefone: null, created_at: "" }],
     "Todos os domingos temos duas saídas, em locais diferentes.",
@@ -156,5 +162,23 @@ describe("a escala cabe numa página", () => {
 
   it("cabe até no mês impossível, de 3 saídas todo dia", async () => {
     expect((await gerarEscala(escalaPesada(() => 3))).paginas).toBe(1);
+  }, 20000);
+
+  it.each([
+    ["uma saída por dia", () => 1],
+    ["domingos dobrados", (d: number) => (d === 0 ? 2 : 1)],
+    ["2 saídas todo dia", () => 2],
+    ["domingos triplicados", (d: number) => (d === 0 ? 3 : 1)],
+    ["3 saídas todo dia", () => 3],
+  ] as const)(
+    "cabe no mês de 5 semanas, que tem a coluna larga da tabela: %s",
+    async (_nome, porDia) => {
+      expect((await gerarEscala(escalaPesada(porDia, SETEMBRO))).paginas).toBe(1);
+    },
+    20000,
+  );
+
+  it("cabe com 2 saídas todo dia num mês de 6 semanas", async () => {
+    expect((await gerarEscala(escalaPesada(() => 2))).paginas).toBe(1);
   }, 20000);
 });

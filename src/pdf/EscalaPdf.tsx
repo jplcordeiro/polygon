@@ -28,7 +28,7 @@ const estilos = StyleSheet.create({
   pagina: {
     fontFamily: SANS,
     color: COR.ink,
-    padding: 18,
+    padding: 12,
   },
   cabecalho: {
     flexDirection: "row",
@@ -73,10 +73,11 @@ const estilos = StyleSheet.create({
   celulaVazia: { backgroundColor: COR.mist },
   dia: {
     fontFamily: MONO,
-    fontSize: 7.5,
+    fontSize: 9.5,
     fontWeight: 600,
     color: COR.inkSoft,
     textAlign: "right",
+    lineHeight: 1.05,
   },
   diaDomingo: { color: COR.ocre },
   saida: { marginTop: 1.5 },
@@ -92,12 +93,34 @@ const estilos = StyleSheet.create({
     letterSpacing: 0.5,
     color: COR.inkFaint,
     textTransform: "uppercase",
+    textAlign: "center",
+    lineHeight: 1.05,
   },
-  local: { fontWeight: 700, color: COR.jwblue },
-  dirigente: { color: COR.ink },
-  aDefinir: { color: COR.ocre, fontStyle: "italic" },
-  territorios: { fontFamily: MONO, color: COR.inkSoft },
-  observacao: { fontStyle: "italic", color: COR.inkSoft },
+  local: {
+    fontWeight: 700,
+    color: COR.jwblue,
+    textAlign: "center",
+    lineHeight: 1.12,
+  },
+  dirigente: { color: COR.ink, textAlign: "center", lineHeight: 1.12 },
+  aDefinir: {
+    color: COR.ocre,
+    fontStyle: "italic",
+    textAlign: "center",
+    lineHeight: 1.12,
+  },
+  territorios: {
+    fontFamily: MONO,
+    color: COR.inkSoft,
+    textAlign: "center",
+    lineHeight: 1.12,
+  },
+  observacao: {
+    fontStyle: "italic",
+    color: COR.inkSoft,
+    textAlign: "center",
+    lineHeight: 1.12,
+  },
   pe: {
     marginTop: 5,
     flexDirection: "row",
@@ -128,6 +151,8 @@ function Saida({
 }) {
   return (
     <View style={[estilos.saida, primeira ? {} : estilos.saidaSeguinte]}>
+      {s.periodo === "tarde" && <Text style={estilos.periodo}>tarde</Text>}
+
       {s.local && (
         <Text style={[estilos.local, { fontSize: patamar.local }]}>{s.local}</Text>
       )}
@@ -138,7 +163,6 @@ function Saida({
           { fontSize: patamar.dirigente },
         ]}
       >
-        {s.periodo === "tarde" && <Text style={estilos.periodo}>tarde · </Text>}
         {s.dirigente}
       </Text>
 

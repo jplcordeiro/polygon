@@ -176,7 +176,7 @@ export function Calendario() {
     if (s.territorio_ids.length === 0) return null;
     if (tamanho === "texto") {
       return (
-        <span className="pointer-events-auto flex flex-wrap gap-1">
+        <span className="pointer-events-auto flex flex-wrap justify-center gap-1">
           {s.territorio_ids.map((id) => {
             const t = territorioDe(id);
             if (!t) return null;
@@ -364,7 +364,7 @@ export function Calendario() {
                     {diaDe(data)}
                   </span>
 
-                  <div className="pointer-events-none relative grid gap-1.5 px-1.5 pb-1.5">
+                  <div className="pointer-events-none relative grid gap-1.5 px-1.5 pb-1.5 text-center">
                     {doDia.map((s) => (
                       <div
                         key={s.id}

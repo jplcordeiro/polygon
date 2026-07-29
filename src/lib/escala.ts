@@ -49,16 +49,16 @@ export interface Escala {
 
 const PATAMARES: Record<number, [Patamar, Patamar]> = {
   1: [
-    { local: 9.5, dirigente: 8, territorio: 7.5, observacao: 7, letrasDoLocal: 60, letrasDoDirigente: 30, letrasDaObservacao: 40 },
-    { local: 9, dirigente: 7.5, territorio: 7, observacao: 6.5, letrasDoLocal: 46, letrasDoDirigente: 26, letrasDaObservacao: 30 },
+    { local: 11, dirigente: 9.5, territorio: 9.5, observacao: 8, letrasDoLocal: 60, letrasDoDirigente: 30, letrasDaObservacao: 40 },
+    { local: 10, dirigente: 9, territorio: 9, observacao: 7.5, letrasDoLocal: 46, letrasDoDirigente: 26, letrasDaObservacao: 30 },
   ],
   2: [
-    { local: 8.5, dirigente: 7.5, territorio: 7, observacao: 6.5, letrasDoLocal: 46, letrasDoDirigente: 26, letrasDaObservacao: 30 },
-    { local: 8, dirigente: 7, territorio: 6.5, observacao: null, letrasDoLocal: 26, letrasDoDirigente: 24, letrasDaObservacao: 0 },
+    { local: 9, dirigente: 8, territorio: 8, observacao: null, letrasDoLocal: 40, letrasDoDirigente: 26, letrasDaObservacao: 0 },
+    { local: 8, dirigente: 7, territorio: 7, observacao: null, letrasDoLocal: 26, letrasDoDirigente: 24, letrasDaObservacao: 0 },
   ],
   3: [
-    { local: 7.5, dirigente: 7, territorio: 6.5, observacao: null, letrasDoLocal: 28, letrasDoDirigente: 24, letrasDaObservacao: 0 },
-    { local: 7, dirigente: 6.5, territorio: null, observacao: null, letrasDoLocal: 30, letrasDoDirigente: 22, letrasDaObservacao: 0 },
+    { local: 7, dirigente: 6.5, territorio: 6, observacao: null, letrasDoLocal: 26, letrasDoDirigente: 22, letrasDaObservacao: 0 },
+    { local: 7, dirigente: 6.5, territorio: null, observacao: null, letrasDoLocal: 28, letrasDoDirigente: 22, letrasDaObservacao: 0 },
   ],
 };
 

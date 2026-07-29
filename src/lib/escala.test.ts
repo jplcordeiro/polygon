@@ -29,24 +29,24 @@ function saida(over: Partial<Saida> & { data: string }): Saida {
 describe("patamarDe", () => {
   it("usa o patamar folgado num mês curto e tranquilo", () => {
     expect(patamarDe(5, 1)).toMatchObject({
-      local: 9.5,
-      dirigente: 8,
-      territorio: 7.5,
-      observacao: 7,
+      local: 11,
+      dirigente: 9.5,
+      territorio: 9.5,
+      observacao: 8,
     });
   });
 
   it("aperta quando o mês tem 6 semanas", () => {
     expect(patamarDe(6, 1)).toMatchObject({
-      local: 9,
-      dirigente: 7.5,
-      territorio: 7,
-      observacao: 6.5,
+      local: 10,
+      dirigente: 9,
+      territorio: 9,
+      observacao: 7.5,
     });
   });
 
   it("solta a observação antes dos territórios", () => {
-    expect(patamarDe(6, 2)).toMatchObject({ territorio: 6.5, observacao: null });
+    expect(patamarDe(6, 2)).toMatchObject({ territorio: 7, observacao: null });
     expect(patamarDe(6, 3)).toMatchObject({ territorio: null, observacao: null });
   });
 
