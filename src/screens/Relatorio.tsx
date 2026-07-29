@@ -67,7 +67,7 @@ export function Relatorio() {
   }
 
   return (
-    <div className="folha mx-auto grid max-w-220 gap-[clamp(16px,3vw,26px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
+    <div className="mx-auto grid max-w-220 gap-[clamp(16px,3vw,26px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div className="nao-imprime flex flex-wrap items-center gap-2">
           <Button

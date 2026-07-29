@@ -263,7 +263,7 @@ export function Calendario() {
   }
 
   return (
-    <div className="folha mx-auto grid max-w-300 gap-[clamp(16px,3vw,26px)] px-[clamp(12px,3vw,32px)] pt-[clamp(16px,4vw,36px)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+    <div className="mx-auto grid max-w-300 gap-[clamp(16px,3vw,26px)] px-[clamp(12px,3vw,32px)] pt-[clamp(16px,4vw,36px)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div className="nao-imprime flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={baixarPdf} disabled={gerando}>
@@ -320,7 +320,7 @@ export function Calendario() {
         />
       ) : (
         <>
-          <div className="folha-grade hidden grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line font-escala shadow-card sm:grid">
+          <div className="hidden grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line font-escala shadow-card sm:grid">
             {ABREV_DIA.map((d, i) => (
               <div
                 key={d}
@@ -400,7 +400,7 @@ export function Calendario() {
             })}
           </div>
 
-          <ol className="folha-agenda grid gap-2.5 font-escala sm:hidden">
+          <ol className="grid gap-2.5 font-escala sm:hidden">
             {diasComSaida.length === 0 ? (
               <p className="py-6 text-center text-[0.9rem] text-ink-soft">
                 Nenhuma saída neste mês. Toque em “Adicionar saída” para começar.

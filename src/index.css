@@ -178,12 +178,11 @@
   }
 }
 
-/* ---- Calendário: a grade impressa em paisagem, para circular no grupo.
-   O Relatório não passa mais por aqui — ele exporta PDF em src/pdf/. ---- */
+/* ---- Ninguém imprime pelo navegador: as duas telas exportam PDF (src/pdf/).
+   O que sobra existe só para um Ctrl+P acidental não sair grotesco. ---- */
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 10mm;
+    margin: 12mm;
   }
   html,
   body {
@@ -197,16 +196,6 @@
     overflow: visible !important;
   }
   .nao-imprime {
-    display: none !important;
-  }
-  .folha {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  .folha-grade {
-    display: grid !important;
-  }
-  .folha-agenda {
     display: none !important;
   }
 }
