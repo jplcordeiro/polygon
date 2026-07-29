@@ -22,6 +22,9 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        globIgnores: ["**/react-pdf*.js", "**/RelatorioPdf*.js"],
+      },
       manifest: {
         name: "polygon",
         short_name: "polygon",

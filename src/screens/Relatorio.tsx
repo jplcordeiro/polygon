@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Printer, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { listTerritorios } from "../lib/territorios";
 import {
   listMarcas,
@@ -10,6 +11,7 @@ import {
 } from "../lib/quadras";
 import { dataBR, MES_NOME, mesVizinho, type Mes } from "../lib/saidas";
 import { campanhas, listRodadas } from "../lib/rodadas";
+import { folhaDoMes } from "../lib/relatorio";
 import type { Rodada } from "../lib/types";
 import type { Territorio } from "../lib/types";
 import { TerritorioGlyph } from "./TerritorioGlyph";
@@ -20,6 +22,7 @@ export function Relatorio() {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [gerando, setGerando] = useState(false);
   const [mes, setMes] = useState<Mes>(() => {
     const d = new Date();
     return { ano: d.getFullYear(), mes: d.getMonth() + 1 };
@@ -38,13 +41,42 @@ export function Relatorio() {
   const relatorio = relatorioDoMes(mes, territorios, marcas, rodadas);
   const periodos = campanhas(rodadas);
 
+  async function baixarPdf() {
+    setGerando(true);
+    try {
+      const [{ pdf }, { RelatorioPdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../pdf/RelatorioPdf"),
+      ]);
+
+      const folha = folhaDoMes(mes, territorios, marcas, rodadas);
+      const blob = await pdf(<RelatorioPdf folha={folha} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `relatorio-${mes.ano}-${String(mes.mes).padStart(2, "0")}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch {
+      toast.error("Não foi possível gerar o PDF.");
+    } finally {
+      setGerando(false);
+    }
+  }
+
   return (
     <div className="folha mx-auto grid max-w-220 gap-[clamp(16px,3vw,26px)] px-[clamp(14px,4vw,32px)] pt-[clamp(16px,4vw,40px)] pb-16">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div className="nao-imprime flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => window.print()}>
-            <Printer aria-hidden="true" />
-            Imprimir
+          <Button
+            size="sm"
+            onClick={baixarPdf}
+            disabled={gerando || relatorio.linhas.length === 0}
+          >
+            <Download aria-hidden="true" />
+            {gerando ? "Gerando…" : "Baixar PDF"}
           </Button>
           <div className="flex items-center rounded-lg border border-line bg-white">
             <Button

@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, todasAsLinhas } from "./supabase";
 import { quadrasDe } from "./territorios";
 import { mesmoMes, type Mes } from "./saidas";
 import { comRodada, rodadasDe, type EmRodada } from "./rodadas";
@@ -233,14 +233,20 @@ type ParadaRow = {
 
 export async function listMarcas(): Promise<Marca[]> {
   const [marcadas, saidas] = await Promise.all([
-    supabase.from("quadra_feita").select("saida_id, territorio_id, quadra_id"),
+    todasAsLinhas<MarcaRow>((de, ate) =>
+      supabase
+        .from("quadra_feita")
+        .select("saida_id, territorio_id, quadra_id")
+        .order("saida_id")
+        .order("quadra_id")
+        .range(de, ate),
+    ),
     supabase.from("saida").select("id, data, local, publicador_id"),
   ]);
-  if (marcadas.error) throw marcadas.error;
   if (saidas.error) throw saidas.error;
 
   const saidaDe = new Map((saidas.data as SaidaRow[]).map((s) => [s.id, s]));
-  return (marcadas.data as MarcaRow[]).flatMap((m) => {
+  return marcadas.flatMap((m) => {
     const s = saidaDe.get(m.saida_id);
     return s
       ? [{ ...m, data: s.data, local: s.local, publicador_id: s.publicador_id }]
@@ -250,14 +256,20 @@ export async function listMarcas(): Promise<Marca[]> {
 
 export async function listParadas(): Promise<Parada[]> {
   const [paradas, saidas] = await Promise.all([
-    supabase.from("ponto_parada").select("territorio_id, quadra_id, saida_id, lng, lat"),
+    todasAsLinhas<ParadaRow>((de, ate) =>
+      supabase
+        .from("ponto_parada")
+        .select("territorio_id, quadra_id, saida_id, lng, lat")
+        .order("saida_id")
+        .order("quadra_id")
+        .range(de, ate),
+    ),
     supabase.from("saida").select("id, data, local, publicador_id"),
   ]);
-  if (paradas.error) throw paradas.error;
   if (saidas.error) throw saidas.error;
 
   const saidaDe = new Map((saidas.data as SaidaRow[]).map((s) => [s.id, s]));
-  return (paradas.data as ParadaRow[]).flatMap((p) => {
+  return paradas.flatMap((p) => {
     const s = saidaDe.get(p.saida_id);
     return s
       ? [{ ...p, data: s.data, local: s.local, publicador_id: s.publicador_id }]

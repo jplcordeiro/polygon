@@ -13,6 +13,7 @@ import {
 import type { Marca, Parada } from "./quadras";
 import type { EmRodada } from "./rodadas";
 import type { Publicador } from "./types";
+import { LINHAS_POR_PAGINA } from "./supabase";
 
 const linhas: Record<string, unknown[]> = {
   quadra_feita: [],
@@ -20,17 +21,34 @@ const linhas: Record<string, unknown[]> = {
   ponto_parada: [],
 };
 const selects: string[] = [];
+const faixas: Record<string, [number, number][]> = {};
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: (tabela: string) => ({
-      select: (colunas: string) => {
-        selects.push(`${tabela}: ${colunas}`);
-        return Promise.resolve({ data: linhas[tabela], error: null });
-      },
-    }),
-  },
-}));
+vi.mock("./supabase", async (orig) => {
+  const actual = await (orig() as Promise<Record<string, unknown>>);
+  return {
+    ...actual,
+    supabase: {
+      from: (tabela: string) => ({
+        select: (colunas: string) => {
+          selects.push(`${tabela}: ${colunas}`);
+          const resposta = Promise.resolve({
+            data: linhas[tabela],
+            error: null,
+          });
+          const consulta = {
+            order: () => consulta,
+            range: (de: number, ate: number) => {
+              (faixas[tabela] ??= []).push([de, ate]);
+              return resposta;
+            },
+            then: resposta.then.bind(resposta),
+          };
+          return consulta;
+        },
+      }),
+    },
+  };
+});
 
 function quadrado(lng: number, lat: number): GeoJSON.Polygon {
   return {
@@ -95,6 +113,16 @@ describe("listMarcas", () => {
 
     const pedido = selects.find((s) => s.startsWith("quadra_feita:")) ?? "";
     expect(pedido).not.toMatch(/saida\s*\(/);
+  });
+
+  it("pagina quadra_feita para não parar no teto de linhas do PostgREST", async () => {
+    linhas.quadra_feita = [];
+    linhas.saida = [];
+    faixas.quadra_feita = [];
+
+    await listMarcas();
+
+    expect(faixas.quadra_feita).toEqual([[0, LINHAS_POR_PAGINA - 1]]);
   });
 
   it("traz data, local e dirigente de cada marca a partir da saída dela", async () => {
@@ -277,6 +305,16 @@ describe("progressoDe", () => {
 });
 
 describe("listParadas", () => {
+  it("pagina ponto_parada para não parar no teto de linhas do PostgREST", async () => {
+    linhas.ponto_parada = [];
+    linhas.saida = [];
+    faixas.ponto_parada = [];
+
+    await listParadas();
+
+    expect(faixas.ponto_parada).toEqual([[0, LINHAS_POR_PAGINA - 1]]);
+  });
+
   it("traz data, local e dirigente do pino a partir da saída dele", async () => {
     linhas.ponto_parada = [
       { territorio_id: "t1", quadra_id: "qa", saida_id: "s1", lng: -46.1, lat: -23.2 },

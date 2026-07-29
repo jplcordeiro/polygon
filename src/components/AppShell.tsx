@@ -102,7 +102,7 @@ function MenuLateral() {
 
 export function AppShell() {
   return (
-    <div className="flex h-dvh flex-col bg-paper">
+    <div data-casca className="flex h-dvh flex-col bg-paper">
       <header className="nao-imprime flex flex-none items-center gap-4 border-b border-line bg-white px-[clamp(14px,4vw,32px)] py-2.5">
         <MenuLateral />
 
@@ -144,7 +144,7 @@ export function AppShell() {
         </Button>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      <main data-casca className="min-h-0 flex-1 overflow-y-auto">
         <Outlet />
       </main>
     </div>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fechamentosDe, relatorioDoMes, type Marca } from "./quadras";
+import { folhaDoMes } from "./relatorio";
 import type { Rodada, Territorio } from "./types";
 
 function quadrado(lng: number, lat: number, lado = 1): GeoJSON.Polygon {
@@ -159,5 +160,99 @@ describe("o relatório não se reescreve quando uma rodada nova começa", () => 
     expect(
       relatorioDoMes(julho, [t], marcas, [rodada("2026-07-18")]).linhas[0],
     ).toMatchObject({ concluidoNoMes: true });
+  });
+});
+
+describe("folhaDoMes", () => {
+  const comNome = (numero: string, nome: string | null, ...ids: string[]) => ({
+    ...territorio(numero, ...ids),
+    nome,
+  });
+
+  it("mês sem trabalho: linhas vazia, totais zerados, cabeçalho preenchido", () => {
+    const folha = folhaDoMes(julho, [territorio("12", "qa")], [], [], "2026-07-29");
+
+    expect(folha).toMatchObject({
+      titulo: "Julho 2026",
+      geradoEm: "29/07/2026",
+      totalQuadrasNoMes: 0,
+      totalTerritorios: 0,
+      totalConcluidos: 0,
+      linhas: [],
+      periodos: [],
+    });
+  });
+
+  it("agrega as passagens de cada território em ordem de data", () => {
+    const t = comNome("6", "Vila Nova", "qa", "qb", "qc");
+    const marcas: Marca[] = [
+      { ...marca("t6", "qc", "2026-07-18"), saida_id: "s2", local: "Rua XV" },
+      { ...marca("t6", "qa", "2026-07-04"), saida_id: "s1", local: "Praça Central" },
+      { ...marca("t6", "qb", "2026-07-04"), saida_id: "s1", local: "Praça Central" },
+    ];
+
+    const folha = folhaDoMes(julho, [t], marcas, [], "2026-07-29");
+
+    expect(folha.linhas).toEqual([
+      {
+        numero: "6",
+        nome: "Vila Nova",
+        feitasNoMes: 3,
+        total: 3,
+        concluidoNoMes: true,
+        passagens: [
+          { saida_id: "s1", data: "2026-07-04", local: "Praça Central", quadras: 2 },
+          { saida_id: "s2", data: "2026-07-18", local: "Rua XV", quadras: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it("território sem nome vira 'Sem nome'", () => {
+    const t = comNome("9", null, "qa");
+    const folha = folhaDoMes(julho, [t], [marca("t9", "qa", "2026-07-02")], [], "2026-07-29");
+
+    expect(folha.linhas[0].nome).toBe("Sem nome");
+  });
+
+  it("soma os totais do cabeçalho a partir das linhas", () => {
+    const t5 = comNome("5", "Centro", "qa", "qb");
+    const t6 = comNome("6", "Vila Nova", "qa");
+    const marcas = [
+      marca("t5", "qa", "2026-07-03"),
+      marca("t6", "qa", "2026-07-09"),
+    ];
+
+    const folha = folhaDoMes(julho, [t5, t6], marcas, [], "2026-07-29");
+
+    expect(folha).toMatchObject({
+      totalQuadrasNoMes: 2,
+      totalTerritorios: 2,
+      totalConcluidos: 1,
+    });
+  });
+
+  it("deriva os períodos das rodadas, nomeando 'Rodada' as sem nome", () => {
+    const rodadas: Rodada[] = [
+      { id: "r1", territorio_id: "t5", inicio: "2026-07-18", nome: null, created_at: "" },
+      { id: "r2", territorio_id: "t6", inicio: "2026-06-01", nome: "Convites", created_at: "" },
+      { id: "r3", territorio_id: "t7", inicio: "2026-06-01", nome: "Convites", created_at: "" },
+    ];
+
+    const folha = folhaDoMes(julho, [], [], rodadas, "2026-07-29");
+
+    expect(folha.periodos).toEqual([
+      { nome: "Rodada", inicio: "2026-07-18", territorios: 1 },
+      { nome: "Convites", inicio: "2026-06-01", territorios: 2 },
+    ]);
+  });
+
+  it("mantém a ordem de entrada dos territórios", () => {
+    const ts = [comNome("5", "A", "qa"), comNome("6", "B", "qa"), comNome("7", "C", "qa")];
+    const marcas = [marca("t5", "qa", "2026-07-01"), marca("t7", "qa", "2026-07-09")];
+
+    const folha = folhaDoMes(julho, ts, marcas, [], "2026-07-29");
+
+    expect(folha.linhas.map((l) => l.numero)).toEqual(["5", "7"]);
   });
 });

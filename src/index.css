@@ -178,14 +178,23 @@
   }
 }
 
-/* ---- Folha do mês: a grade impressa em paisagem, para circular no grupo ---- */
+/* ---- Calendário: a grade impressa em paisagem, para circular no grupo.
+   O Relatório não passa mais por aqui — ele exporta PDF em src/pdf/. ---- */
 @media print {
   @page {
     size: A4 landscape;
     margin: 10mm;
   }
+  html,
   body {
+    height: auto;
+    overflow: visible;
     background: #fff;
+  }
+  [data-casca] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   .nao-imprime {
     display: none !important;
@@ -199,8 +208,5 @@
   }
   .folha-agenda {
     display: none !important;
-  }
-  .folha details::details-content {
-    content-visibility: visible !important;
   }
 }
