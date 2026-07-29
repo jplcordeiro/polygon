@@ -43,27 +43,43 @@ A folha calcula a **densidade** do mês — o maior número de saídas num únic
 escolhe um patamar tipográfico. É uma tabela de consulta, não medição de texto, então
 permanece função pura e testável.
 
-| semanas | densidade | local | dirigente | territórios | observação |
-|---|---|---|---|---|---|
-| ≤5 | 1 | 9,5 | 8 | 7,5 | 7 |
-| ≤5 | 2 | 8,5 | 7,5 | 7 | 6,5 |
-| ≤5 | 3+ | 7,5 | 7 | 6,5 | — |
-| 6 | 1 | 9 | 7,5 | 7 | 6,5 |
-| 6 | 2 | 8 | 7 | 6,5 | — |
-| 6 | 3+ | 7 | 6,5 | — | — |
+| semanas | densidade | local | dirigente | territórios | observação | letras: local / dirigente / obs. |
+|---|---|---|---|---|---|---|
+| ≤5 | 1 | 9,5 | 8 | 7,5 | 7 | 60 / 30 / 40 |
+| ≤5 | 2 | 8,5 | 7,5 | 7 | 6,5 | 46 / 26 / 30 |
+| ≤5 | 3+ | 7,5 | 7 | 6,5 | — | 28 / 24 / — |
+| 6 | 1 | 9 | 7,5 | 7 | 6,5 | 46 / 26 / 30 |
+| 6 | 2 | 8 | 7 | 6,5 | — | 26 / 24 / — |
+| 6 | 3+ | 7 | 6,5 | — | — | 30 / 22 / — |
 
-Leitura da tabela: os números são corpo de fonte em pontos, e **`—` significa que o
-campo não é desenhado**. A coluna "observação" é a `observacao` *da saída*, não a
-seção "Avisos do mês", que é independente e nunca é suprimida. Densidade ≥ 3 usa a
-última linha do seu grupo — não há patamar abaixo desse.
+Leitura da tabela: os números de corpo são pontos, e **`—` significa que o campo não é
+desenhado**. A coluna "observação" é a `observacao` *da saída*, não a seção "Avisos do
+mês", que é independente e nunca é suprimida. Densidade ≥ 3 usa a última linha do seu
+grupo — não há patamar abaixo desse.
 
 Quando aperta, **a observação cai antes dos territórios**: território é operacional
-(quem vai aonde), observação é recado. A observação é sempre clampada a uma linha,
-mesmo quando cabe — sozinha, ela poderia estourar qualquer patamar.
+(quem vai aonde), observação é recado.
 
-**Modo de falha, explícito:** a tabela é uma heurística. Se estiver errada para algum
-mês, o PDF vaza para a página 2. Degrada, não quebra. É por isso que a verificação
-renderiza um PDF real no pior caso e afirma o número de páginas (ver Testes).
+### Corrigido na implementação: o que faz a célula crescer é a quebra de linha
+
+O design original supunha que o corpo da fonte governava a altura da célula. Está
+errado. A célula tem ~110pt de largura útil, e o que estourava a página era **texto
+quebrando em várias linhas**: `"Salão do Reino da Congregação Central"` ocupa duas
+linhas, e o nome do dirigente, mais uma. Encolher a fonte quase não ajudava, porque
+texto menor cabe mais por linha e continua quebrando.
+
+Duas consequências:
+
+- O `Patamar` ganhou **`letrasDoLocal`, `letrasDoDirigente` e `letrasDaObservacao`**, e
+  `escalaDoMes` trunca com reticências. Com todo campo limitado em caracteres, a altura
+  máxima da célula passa a ser calculável — é isso, e não a escala tipográfica, que
+  torna "uma página" uma garantia de verdade.
+- A prop `maxLines` do `Text` **não funciona** no `@react-pdf/renderer` 4.5.1: o texto
+  quebra assim mesmo. Por isso o corte é dado, feito na função pura, e não um pedido ao
+  renderizador.
+
+Com isso, até o mês impossível — 6 semanas com três saídas em *todos* os dias — cabe em
+uma página. O modo de degradação continua sendo vazar para a página 2, nunca quebrar.
 
 ### Alternativas descartadas
 
@@ -184,7 +200,7 @@ grade colorida.
 |---|---|
 | `src/lib/escala.test.ts` | `escalaDoMes` monta as semanas, resolve dirigente e territórios, e deixa os dias vizinhos vazios; `patamarDe` devolve a tabela |
 | `src/pdf/EscalaPdf.test.tsx` | árvore de elementos: ponto de encontro acima do dirigente, "tarde" só à tarde, observação clampada |
-| `src/pdf/verificacao.test.tsx` | **renderiza o PDF real e afirma 1 página** no pior caso: mês de 6 semanas, 3 saídas por dia, observações longas |
+| `src/pdf/verificacao.test.tsx` | **renderiza o PDF real e afirma 1 página** em quatro cenários, do mês tranquilo ao impossível (6 semanas × 3 saídas/dia), sempre passando por `escalaDoMes` para que o corte de texto entre na conta |
 | `src/screens/Calendario.test.tsx` | botão, nome do arquivo, e que saída de mês vizinho não aparece mais |
 
 O terceiro carrega o peso. "Sempre uma página" é a promessa central da decisão, e só um

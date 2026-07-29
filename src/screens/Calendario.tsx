@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   diaDaSemana,
@@ -24,6 +24,7 @@ import { listMarcas, marcasDaRodada, type Marca } from "../lib/quadras";
 import { comRodada, listRodadas } from "../lib/rodadas";
 import type { Rodada } from "../lib/types";
 import { listPublicadores } from "../lib/publicadores";
+import { escalaDoMes } from "../lib/escala";
 import type { Publicador, Saida, Territorio } from "../lib/types";
 import { TerritorioGlyph } from "./TerritorioGlyph";
 import { SaidaForm } from "./SaidaForm";
@@ -84,6 +85,7 @@ export function Calendario() {
   const [diaAberto, setDiaAberto] = useState<string | null>(null);
   const [editando, setEditando] = useState<Saida | "nova" | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [gerando, setGerando] = useState(false);
 
   const grade = gradeDoMes(mes);
 
@@ -123,6 +125,31 @@ export function Calendario() {
       toast.success("Aviso do mês salvo.");
     } catch {
       toast.error("Não foi possível salvar o aviso. Tente novamente.");
+    }
+  }
+
+  async function baixarPdf() {
+    setGerando(true);
+    try {
+      const [{ pdf }, { EscalaPdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../pdf/EscalaPdf"),
+      ]);
+
+      const escala = escalaDoMes(mes, saidas, territorios, publicadores, nota);
+      const blob = await pdf(<EscalaPdf escala={escala} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `escala-${mes.ano}-${String(mes.mes).padStart(2, "0")}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch {
+      toast.error("Não foi possível gerar o PDF.");
+    } finally {
+      setGerando(false);
     }
   }
 
@@ -239,9 +266,9 @@ export function Calendario() {
     <div className="folha mx-auto grid max-w-300 gap-[clamp(16px,3vw,26px)] px-[clamp(12px,3vw,32px)] pt-[clamp(16px,4vw,36px)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
         <div className="nao-imprime flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => window.print()}>
-            <Printer aria-hidden="true" />
-            Imprimir
+          <Button size="sm" onClick={baixarPdf} disabled={gerando}>
+            <Download aria-hidden="true" />
+            {gerando ? "Gerando…" : "Baixar PDF"}
           </Button>
           <div className="flex items-center rounded-lg border border-line bg-white">
             <Button

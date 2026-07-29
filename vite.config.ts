@@ -23,7 +23,12 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
-        globIgnores: ["**/react-pdf*.js", "**/RelatorioPdf*.js"],
+        globIgnores: [
+          "**/react-pdf*.js",
+          "**/RelatorioPdf*.js",
+          "**/EscalaPdf*.js",
+          "**/fontes*.js",
+        ],
       },
       manifest: {
         name: "polygon",

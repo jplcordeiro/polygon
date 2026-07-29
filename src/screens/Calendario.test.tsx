@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Calendario } from "./Calendario";
 
 const { hojeISO } = vi.hoisted(() => {
@@ -59,6 +59,14 @@ vi.mock("../lib/quadras", async (orig) => {
   const actual = await (orig() as Promise<Record<string, unknown>>);
   return { ...actual, listMarcas: vi.fn().mockResolvedValue([]) };
 });
+
+const toBlob = vi.fn();
+const pdfMock = vi.fn((_documento: { props: { escala: unknown } }) => ({ toBlob }));
+vi.mock("@react-pdf/renderer", () => ({ pdf: pdfMock }));
+vi.mock("../pdf/EscalaPdf", () => ({
+  EscalaPdf: ({ escala }: { escala: unknown }) => ({ escala }),
+}));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 function montar() {
   return render(
@@ -146,5 +154,65 @@ describe("dias de outro mês", () => {
     const [de, ate] = vi.mocked(listSaidas).mock.calls[0];
     expect(de.slice(-2)).toBe("01");
     expect(de.slice(0, 7)).toBe(ate.slice(0, 7));
+  });
+});
+
+describe("exportar a escala em PDF", () => {
+  beforeEach(() => {
+    toBlob.mockResolvedValue(new Blob(["%PDF"], { type: "application/pdf" }));
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    URL.createObjectURL = vi.fn(() => "blob:escala");
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it("baixa a escala do mês exibido", async () => {
+    const baixados: string[] = [];
+    const criar = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+      const el = criar(tag);
+      if (tag === "a") {
+        vi.spyOn(el as HTMLAnchorElement, "click").mockImplementation(() => {
+          baixados.push((el as HTMLAnchorElement).download);
+        });
+      }
+      return el;
+    });
+
+    montar();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Baixar PDF/ })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Baixar PDF/ }));
+
+    await waitFor(() => expect(baixados).toHaveLength(1));
+    expect(baixados[0]).toMatch(/^escala-\d{4}-\d{2}\.pdf$/);
+
+    vi.mocked(document.createElement).mockRestore();
+  });
+
+  it("continua habilitado num mês sem saída nenhuma", async () => {
+    const { listSaidas } = await import("../lib/saidas");
+    vi.mocked(listSaidas).mockResolvedValueOnce([]);
+
+    montar();
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Baixar PDF/ })).toBeEnabled(),
+    );
+  });
+
+  it("avisa por toast quando a geração falha", async () => {
+    const { toast } = await import("sonner");
+    toBlob.mockRejectedValue(new Error("fontkit"));
+
+    montar();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Baixar PDF/ })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Baixar PDF/ }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Não foi possível gerar o PDF."),
+    );
   });
 });
