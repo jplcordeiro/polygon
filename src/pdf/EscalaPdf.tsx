@@ -110,8 +110,8 @@ const estilos = StyleSheet.create({
     lineHeight: 1.12,
   },
   territorios: {
-    fontFamily: MONO,
-    color: COR.inkSoft,
+    fontWeight: 700,
+    color: COR.ink,
     textAlign: "center",
     lineHeight: 1.12,
   },
@@ -168,7 +168,9 @@ function Saida({
 
       {patamar.territorio !== null && s.territorios.length > 0 && (
         <Text style={[estilos.territorios, { fontSize: patamar.territorio }]}>
-          {s.territorios.join(" · ")}
+          {s.territorios.length === 1
+            ? `Território ${s.territorios[0]}`
+            : `Territórios ${s.territorios.join(" · ")}`}
         </Text>
       )}
 

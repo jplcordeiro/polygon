@@ -108,6 +108,21 @@ describe("EscalaPdf", () => {
     );
   });
 
+  it("rotula os territórios, no plural quando há mais de um", () => {
+    const saiu = textos(EscalaPdf({ escala: escalaDe() }));
+
+    expect(saiu).toContain("Territórios 6 · 12");
+  });
+
+  it("rotula no singular quando a saída tem um só território", () => {
+    const uma = escalaDe();
+    uma.semanas[0][3].saidas[0].territorios = ["23"];
+    const saiu = textos(EscalaPdf({ escala: uma })).join(" ");
+
+    expect(saiu).toContain("Território 23");
+    expect(saiu).not.toContain("Territórios 23");
+  });
+
   it("some com os territórios no patamar mais apertado", () => {
     const semTerritorios = escalaDe({ patamar: patamarDe(6, 3) });
 
