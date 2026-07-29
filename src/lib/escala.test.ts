@@ -28,7 +28,7 @@ function saida(over: Partial<Saida> & { data: string }): Saida {
 
 describe("patamarDe", () => {
   it("usa o patamar folgado num mês curto e tranquilo", () => {
-    expect(patamarDe(5, 1)).toEqual({
+    expect(patamarDe(5, 1)).toMatchObject({
       local: 9.5,
       dirigente: 8,
       territorio: 7.5,
@@ -37,7 +37,7 @@ describe("patamarDe", () => {
   });
 
   it("aperta quando o mês tem 6 semanas", () => {
-    expect(patamarDe(6, 1)).toEqual({
+    expect(patamarDe(6, 1)).toMatchObject({
       local: 9,
       dirigente: 7.5,
       territorio: 7,
@@ -56,6 +56,13 @@ describe("patamarDe", () => {
 
   it("trata mês sem saída nenhuma como densidade 1", () => {
     expect(patamarDe(5, 0)).toEqual(patamarDe(5, 1));
+  });
+
+  it("aperta o corte de texto junto com a fonte", () => {
+    expect(patamarDe(6, 3).letrasDoLocal).toBeLessThan(patamarDe(5, 1).letrasDoLocal);
+    expect(patamarDe(6, 3).letrasDoDirigente).toBeLessThan(
+      patamarDe(5, 1).letrasDoDirigente,
+    );
   });
 });
 
@@ -180,5 +187,43 @@ describe("escalaDoMes", () => {
     );
 
     expect(e.patamar).toEqual(patamarDe(e.semanas.length, 2));
+  });
+});
+
+describe("corte de texto", () => {
+  it("encurta ponto de encontro comprido, porque a célula é estreita", () => {
+    const e = escalaDoMes(
+      julho,
+      [
+        saida({
+          data: "2026-07-05",
+          local:
+            "Salão do Reino da Congregação Central, ao lado da praça principal do bairro",
+        }),
+      ],
+      territorios,
+      publicadores,
+      "",
+      "2026-07-29",
+    );
+
+    const local = e.semanas.flat().find((d) => d.data === "2026-07-05")!.saidas[0].local!;
+    expect(local.length).toBeLessThanOrEqual(e.patamar.letrasDoLocal);
+    expect(local.endsWith("…")).toBe(true);
+  });
+
+  it("não mexe no que já cabe", () => {
+    const e = escalaDoMes(
+      julho,
+      [saida({ data: "2026-07-05", local: "Salão" })],
+      territorios,
+      publicadores,
+      "",
+      "2026-07-29",
+    );
+
+    expect(e.semanas.flat().find((d) => d.data === "2026-07-05")!.saidas[0].local).toBe(
+      "Salão",
+    );
   });
 });

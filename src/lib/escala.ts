@@ -34,6 +34,9 @@ export interface Patamar {
   dirigente: number;
   territorio: number | null;
   observacao: number | null;
+  letrasDoLocal: number;
+  letrasDoDirigente: number;
+  letrasDaObservacao: number;
 }
 
 export interface Escala {
@@ -46,18 +49,22 @@ export interface Escala {
 
 const PATAMARES: Record<number, [Patamar, Patamar]> = {
   1: [
-    { local: 9.5, dirigente: 8, territorio: 7.5, observacao: 7 },
-    { local: 9, dirigente: 7.5, territorio: 7, observacao: 6.5 },
+    { local: 9.5, dirigente: 8, territorio: 7.5, observacao: 7, letrasDoLocal: 60, letrasDoDirigente: 30, letrasDaObservacao: 40 },
+    { local: 9, dirigente: 7.5, territorio: 7, observacao: 6.5, letrasDoLocal: 46, letrasDoDirigente: 26, letrasDaObservacao: 30 },
   ],
   2: [
-    { local: 8.5, dirigente: 7.5, territorio: 7, observacao: 6.5 },
-    { local: 8, dirigente: 7, territorio: 6.5, observacao: null },
+    { local: 8.5, dirigente: 7.5, territorio: 7, observacao: 6.5, letrasDoLocal: 46, letrasDoDirigente: 26, letrasDaObservacao: 30 },
+    { local: 8, dirigente: 7, territorio: 6.5, observacao: null, letrasDoLocal: 26, letrasDoDirigente: 24, letrasDaObservacao: 0 },
   ],
   3: [
-    { local: 7.5, dirigente: 7, territorio: 6.5, observacao: null },
-    { local: 7, dirigente: 6.5, territorio: null, observacao: null },
+    { local: 7.5, dirigente: 7, territorio: 6.5, observacao: null, letrasDoLocal: 28, letrasDoDirigente: 24, letrasDaObservacao: 0 },
+    { local: 7, dirigente: 6.5, territorio: null, observacao: null, letrasDoLocal: 30, letrasDoDirigente: 22, letrasDaObservacao: 0 },
   ],
 };
+
+function cortar(texto: string, letras: number): string {
+  return texto.length <= letras ? texto : `${texto.slice(0, letras - 1).trimEnd()}…`;
+}
 
 export function patamarDe(semanas: number, densidade: number): Patamar {
   const nivel = Math.min(Math.max(densidade, 1), 3);
@@ -75,6 +82,16 @@ export function escalaDoMes(
   const numeroDe = new Map(territorios.map((t) => [t.id, t.numero]));
   const nomeDe = new Map(publicadores.map((p) => [p.id, p.nome]));
 
+  const porDia = new Map<string, number>();
+  for (const s of saidas) porDia.set(s.data, (porDia.get(s.data) ?? 0) + 1);
+  const patamar = patamarDe(
+    gradeDoMes(m).length / 7,
+    [...porDia.entries()].reduce(
+      (maior, [data, quantas]) => (mesmoMes(data, m) ? Math.max(maior, quantas) : maior),
+      0,
+    ),
+  );
+
   const dias = gradeDoMes(m).map((data): DiaEscala => {
     const doMes = mesmoMes(data, m);
     return {
@@ -85,15 +102,19 @@ export function escalaDoMes(
       saidas: doMes
         ? saidasDoDia(saidas, data).map((s) => ({
             periodo: s.periodo,
-            local: s.local,
-            dirigente: s.publicador_id
-              ? (nomeDe.get(s.publicador_id) ?? "a definir")
-              : "a definir",
+            local: s.local && cortar(s.local, patamar.letrasDoLocal),
+            dirigente: cortar(
+              s.publicador_id
+                ? (nomeDe.get(s.publicador_id) ?? "a definir")
+                : "a definir",
+              patamar.letrasDoDirigente,
+            ),
             territorios: s.territorio_ids.flatMap((id) => {
               const numero = numeroDe.get(id);
               return numero ? [numero] : [];
             }),
-            observacao: s.observacao,
+            observacao:
+              s.observacao && cortar(s.observacao, patamar.letrasDaObservacao),
           }))
         : [],
     };
@@ -102,13 +123,11 @@ export function escalaDoMes(
   const semanas: SemanaEscala[] = [];
   for (let i = 0; i < dias.length; i += 7) semanas.push(dias.slice(i, i + 7));
 
-  const densidade = dias.reduce((maior, d) => Math.max(maior, d.saidas.length), 0);
-
   return {
     titulo: `${MES_NOME[m.mes - 1]} ${m.ano}`,
     geradoEm: dataBR(hoje),
     aviso: aviso.trim(),
     semanas,
-    patamar: patamarDe(semanas.length, densidade),
+    patamar,
   };
 }
