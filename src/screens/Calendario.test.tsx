@@ -106,3 +106,45 @@ describe("Calendario", () => {
     );
   });
 });
+
+describe("dias de outro mês", () => {
+  it("não mostra saída que caiu num dia emprestado da grade", async () => {
+    const { listSaidas, gradeDoMes, mesmoMes } = await import("../lib/saidas");
+    const agora = new Date();
+    const mes = { ano: agora.getFullYear(), mes: agora.getMonth() + 1 };
+    const emprestado = gradeDoMes(mes).find((d) => !mesmoMes(d, mes));
+    expect(emprestado).toBeDefined();
+
+    vi.mocked(listSaidas).mockResolvedValueOnce([
+      {
+        id: "s9",
+        data: emprestado!,
+        periodo: "manha",
+        local: "Ponto do mês vizinho",
+        publicador_id: null,
+        observacao: null,
+        created_at: "2026-06-01T00:00:00Z",
+        territorio_ids: [],
+      },
+    ]);
+
+    montar();
+
+    await waitFor(() =>
+      expect(screen.queryByRole("status")).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Ponto do mês vizinho")).not.toBeInTheDocument();
+  });
+
+  it("pede ao Supabase só o intervalo do mês, não o da grade", async () => {
+    const { listSaidas } = await import("../lib/saidas");
+    vi.mocked(listSaidas).mockClear();
+
+    montar();
+
+    await waitFor(() => expect(listSaidas).toHaveBeenCalled());
+    const [de, ate] = vi.mocked(listSaidas).mock.calls[0];
+    expect(de.slice(-2)).toBe("01");
+    expect(de.slice(0, 7)).toBe(ate.slice(0, 7));
+  });
+});

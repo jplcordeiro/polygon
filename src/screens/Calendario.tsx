@@ -8,6 +8,7 @@ import {
   DIA_SEMANA,
   excluirSaida,
   gradeDoMes,
+  iso,
   listSaidas,
   locaisUsados,
   MES_NOME,
@@ -88,7 +89,7 @@ export function Calendario() {
 
   async function carregar() {
     const [s, t, p, n, m, r] = await Promise.all([
-      listSaidas(grade[0], grade[grade.length - 1]),
+      listSaidas(iso(mes, 1), iso({ ano: mes.ano, mes: mes.mes + 1 }, 0)),
       listTerritorios(),
       listPublicadores(),
       notaDoMes(mes),
@@ -307,7 +308,9 @@ export function Calendario() {
 
             {grade.map((data) => {
               const dow = diaDaSemana(data);
-              const doMes = mesmoMes(data, mes);
+              if (!mesmoMes(data, mes))
+                return <div key={data} className="min-h-30 bg-mist" />;
+
               const doDia = saidasDoDia(saidas, data);
               const ehHoje = data === hoje;
               return (
@@ -316,7 +319,6 @@ export function Calendario() {
                   className={cn(
                     "relative flex min-h-30 flex-col",
                     WASH[dow],
-                    !doMes && "opacity-45",
                     ehHoje && "ring-2 ring-inset ring-jwblue",
                   )}
                 >
@@ -324,10 +326,7 @@ export function Calendario() {
                     type="button"
                     className="nao-imprime absolute inset-0 cursor-pointer"
                     aria-label={`Saídas de ${diaDe(data)} de ${MES_NOME[Number(data.split("-")[1]) - 1]}`}
-                    onClick={() => {
-                      if (!doMes) setMes({ ano: Number(data.split("-")[0]), mes: Number(data.split("-")[1]) });
-                      setDiaAberto(data);
-                    }}
+                    onClick={() => setDiaAberto(data)}
                   />
                   <span
                     className={cn(
