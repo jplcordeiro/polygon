@@ -29,25 +29,34 @@ function saida(over: Partial<Saida> & { data: string }): Saida {
 describe("patamarDe", () => {
   it("usa o patamar folgado num mês curto e tranquilo", () => {
     expect(patamarDe(5, 1)).toMatchObject({
-      local: 11,
-      dirigente: 9.5,
-      territorio: 9.5,
-      observacao: 8,
+      local: 15,
+      dirigente: 13,
+      territorio: 13,
+      observacao: 11,
     });
   });
 
-  it("aperta quando o mês tem 6 semanas", () => {
-    expect(patamarDe(6, 1)).toMatchObject({
-      local: 10,
-      dirigente: 9,
-      territorio: 9,
-      observacao: 7.5,
-    });
+  it("não aperta o mês tranquilo de 6 semanas, que trava na largura da palavra", () => {
+    expect(patamarDe(6, 1)).toEqual(patamarDe(5, 1));
   });
 
-  it("solta a observação antes dos territórios", () => {
-    expect(patamarDe(6, 2)).toMatchObject({ territorio: 7, observacao: null });
-    expect(patamarDe(6, 3)).toMatchObject({ territorio: null, observacao: null });
+  it("aperta o mês de 6 semanas a partir de duas saídas num dia", () => {
+    expect(patamarDe(6, 2).local).toBeLessThan(patamarDe(5, 2).local);
+    expect(patamarDe(6, 3).local).toBeLessThan(patamarDe(5, 3).local);
+  });
+
+  it("solta a observação a partir de duas saídas num dia", () => {
+    expect(patamarDe(5, 1).observacao).not.toBeNull();
+    expect(patamarDe(5, 2).observacao).toBeNull();
+    expect(patamarDe(6, 3).observacao).toBeNull();
+  });
+
+  it("mantém o número do território em todos os patamares", () => {
+    for (const semanas of [5, 6]) {
+      for (const densidade of [1, 2, 3]) {
+        expect(patamarDe(semanas, densidade).territorio).not.toBeNull();
+      }
+    }
   });
 
   it("trata densidade acima de 3 como 3", () => {
@@ -58,11 +67,21 @@ describe("patamarDe", () => {
     expect(patamarDe(5, 0)).toEqual(patamarDe(5, 1));
   });
 
-  it("aperta o corte de texto junto com a fonte", () => {
-    expect(patamarDe(6, 3).letrasDoLocal).toBeLessThan(patamarDe(5, 1).letrasDoLocal);
-    expect(patamarDe(6, 3).letrasDoDirigente).toBeLessThan(
-      patamarDe(5, 1).letrasDoDirigente,
-    );
+  it("nunca deixa o patamar apertado mostrar mais que o folgado", () => {
+    const folgado = patamarDe(5, 1);
+    for (const semanas of [5, 6]) {
+      for (const densidade of [1, 2, 3]) {
+        const p = patamarDe(semanas, densidade);
+        expect(p.local).toBeLessThanOrEqual(folgado.local);
+        expect(p.letrasDoLocal).toBeLessThanOrEqual(folgado.letrasDoLocal);
+        expect(p.letrasDoDirigente).toBeLessThanOrEqual(folgado.letrasDoDirigente);
+      }
+    }
+  });
+
+  it("encolhe o tipo conforme o mês fica mais cheio", () => {
+    expect(patamarDe(5, 2).local).toBeLessThan(patamarDe(5, 1).local);
+    expect(patamarDe(5, 3).local).toBeLessThan(patamarDe(5, 2).local);
   });
 });
 

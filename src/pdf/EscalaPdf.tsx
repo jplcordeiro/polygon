@@ -2,6 +2,8 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { DiaEscala, Escala, Patamar, SaidaEscala } from "../lib/escala";
 import { MONO, SANS, registrarFontes } from "./fontes";
 
+const TELA: [number, number] = [842, 1400];
+
 const ABREV_DIA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
 const MATIZ = [
@@ -37,18 +39,23 @@ const estilos = StyleSheet.create({
     marginBottom: 6,
   },
   rotulo: {
-    fontSize: 7.5,
+    fontSize: 11,
     fontWeight: 600,
     letterSpacing: 1.2,
     color: COR.inkSoft,
     textTransform: "uppercase",
   },
-  mes: { fontSize: 16, fontWeight: 700, color: COR.jwblue },
+  mes: {
+    fontSize: 24,
+    fontWeight: 700,
+    color: COR.jwblue,
+    textTransform: "uppercase",
+  },
   faixa: { flexDirection: "row" },
   faixaDia: {
     flex: 1,
     textAlign: "center",
-    fontSize: 6.5,
+    fontSize: 11,
     fontWeight: 700,
     letterSpacing: 1,
     color: COR.inkSoft,
@@ -73,7 +80,7 @@ const estilos = StyleSheet.create({
   celulaVazia: { backgroundColor: COR.mist },
   dia: {
     fontFamily: MONO,
-    fontSize: 9.5,
+    fontSize: 14,
     fontWeight: 600,
     color: COR.inkSoft,
     textAlign: "right",
@@ -89,7 +96,7 @@ const estilos = StyleSheet.create({
   periodo: {
     fontFamily: MONO,
     fontStyle: "normal",
-    fontSize: 5.5,
+    fontSize: 8,
     letterSpacing: 0.5,
     color: COR.inkFaint,
     textTransform: "uppercase",
@@ -101,25 +108,34 @@ const estilos = StyleSheet.create({
     color: COR.jwblue,
     textAlign: "center",
     lineHeight: 1.12,
+    textTransform: "uppercase",
   },
-  dirigente: { color: COR.ink, textAlign: "center", lineHeight: 1.12 },
+  dirigente: {
+    color: COR.ink,
+    textAlign: "center",
+    lineHeight: 1.12,
+    textTransform: "uppercase",
+  },
   aDefinir: {
     color: COR.ocre,
     fontStyle: "italic",
     textAlign: "center",
     lineHeight: 1.12,
+    textTransform: "uppercase",
   },
   territorios: {
     fontWeight: 700,
     color: COR.ink,
     textAlign: "center",
     lineHeight: 1.12,
+    textTransform: "uppercase",
   },
   observacao: {
     fontStyle: "italic",
     color: COR.inkSoft,
     textAlign: "center",
     lineHeight: 1.12,
+    textTransform: "uppercase",
   },
   pe: {
     marginTop: 5,
@@ -129,15 +145,25 @@ const estilos = StyleSheet.create({
   },
   avisos: { flexDirection: "row", alignItems: "baseline", flex: 1 },
   avisosRotulo: {
-    fontSize: 6.5,
+    fontSize: 10,
     fontWeight: 700,
     letterSpacing: 1,
     color: COR.inkSoft,
     textTransform: "uppercase",
     marginRight: 6,
   },
-  avisosTexto: { fontSize: 8, color: COR.ink, flex: 1 },
-  rodape: { fontSize: 6.5, color: COR.inkFaint, marginLeft: 10 },
+  avisosTexto: {
+    fontSize: 12,
+    color: COR.ink,
+    flex: 1,
+    textTransform: "uppercase",
+  },
+  rodape: {
+    fontSize: 9,
+    color: COR.inkFaint,
+    marginLeft: 10,
+    textTransform: "uppercase",
+  },
 });
 
 function Saida({
@@ -203,7 +229,7 @@ export function EscalaPdf({ escala }: { escala: Escala }) {
 
   return (
     <Document title={`Saídas de campo — ${escala.titulo}`}>
-      <Page size="A4" orientation="landscape" style={estilos.pagina}>
+      <Page size={TELA} style={estilos.pagina}>
         <View style={estilos.cabecalho}>
           <Text style={estilos.rotulo}>Saídas de campo</Text>
           <Text style={estilos.mes}>{escala.titulo}</Text>

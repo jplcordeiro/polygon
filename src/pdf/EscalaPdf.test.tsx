@@ -123,8 +123,16 @@ describe("EscalaPdf", () => {
     expect(saiu).not.toContain("Territórios 23");
   });
 
-  it("some com os territórios no patamar mais apertado", () => {
-    const semTerritorios = escalaDe({ patamar: patamarDe(6, 3) });
+  it("mantém os territórios até no patamar mais apertado", () => {
+    const apertado = escalaDe({ patamar: patamarDe(6, 3) });
+
+    expect(textos(EscalaPdf({ escala: apertado })).join(" ")).toContain("6 · 12");
+  });
+
+  it("some com os territórios quando o patamar os dispensa", () => {
+    const semTerritorios = escalaDe({
+      patamar: { ...patamarDe(6, 3), territorio: null },
+    });
 
     expect(textos(EscalaPdf({ escala: semTerritorios })).join(" ")).not.toContain(
       "6 · 12",
