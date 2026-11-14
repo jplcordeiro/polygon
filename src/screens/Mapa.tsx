@@ -63,7 +63,7 @@ export function Mapa() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <BaseMap bounds={bounds}>
+      <BaseMap showLocation centralizarAoAbrir={false} bounds={bounds}>
         <TerritoriosLayer
           territorios={territorios}
           onSelect={(id) => navigate(`/campo/${id}`)}
