@@ -83,6 +83,20 @@ vi.mock("../lib/rodadas", async (orig) => ({
   comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
 }));
 
+const rolar = vi.fn();
+Element.prototype.scrollIntoView = rolar;
+
+describe("lista do celular", () => {
+  it("rola até o card de hoje ao abrir", async () => {
+    rolar.mockClear();
+    montar();
+
+    await waitFor(() => expect(rolar).toHaveBeenCalledTimes(1));
+    expect(rolar.mock.contexts[0]).toHaveTextContent(/hoje/i);
+    expect(rolar.mock.contexts[0]).toHaveTextContent("Gruta da Ilha");
+  });
+});
+
 describe("Calendario", () => {
   it("mostra o ponto de encontro, o dirigente e o território da saída", async () => {
     montar();

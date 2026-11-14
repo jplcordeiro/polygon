@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -171,6 +171,14 @@ export function Calendario() {
   const diasComSaida = grade.filter(
     (d) => mesmoMes(d, mes) && saidasDoDia(saidas, d).length > 0,
   );
+  const proximoDia = mesmoMes(hoje, mes)
+    ? diasComSaida.find((d) => d >= hoje)
+    : undefined;
+  const proximoDiaRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (!carregando) proximoDiaRef.current?.scrollIntoView({ block: "start" });
+  }, [carregando]);
 
   function Territorios({ s, tamanho }: { s: Saida; tamanho: "selo" | "texto" }) {
     if (s.territorio_ids.length === 0) return null;
@@ -412,8 +420,9 @@ export function Calendario() {
                 return (
                   <li
                     key={data}
+                    ref={data === proximoDia ? proximoDiaRef : undefined}
                     className={cn(
-                      "overflow-hidden rounded-xl border bg-white shadow-card",
+                      "scroll-mt-3 overflow-hidden rounded-xl border bg-white shadow-card",
                       ehHoje ? "border-jwblue" : "border-line",
                     )}
                   >
