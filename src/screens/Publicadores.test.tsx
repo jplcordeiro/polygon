@@ -140,12 +140,12 @@ describe("Publicadores", () => {
 });
 
 describe("Publicadores — editar nome", () => {
-  it("salva o novo nome ao apertar Enter", async () => {
+  it("salva o novo nome no botão de confirmar", async () => {
     render(<MemoryRouter><Publicadores /></MemoryRouter>);
     fireEvent.click(await screen.findByRole("button", { name: "Editar nome de Ana Ribeiro" }));
     const campo = screen.getByRole("textbox", { name: "Nome de Ana Ribeiro" });
     fireEvent.change(campo, { target: { value: "  Ana Ribeiro Lima " } });
-    fireEvent.keyDown(campo, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar nome" }));
     await waitFor(() => expect(renomearPublicador).toHaveBeenCalledWith("p2", "Ana Ribeiro Lima"));
   });
 

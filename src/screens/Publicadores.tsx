@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Search, X } from "lucide-react";
+import { Check, Pencil, Search, X } from "lucide-react";
 import {
   listPublicadores,
   criarPublicador,
@@ -199,18 +199,37 @@ export function Publicadores() {
               >
                 <div className="flex items-center gap-3">
                   {editando?.id === p.id ? (
-                    <Input
-                      autoFocus
-                      aria-label={`Nome de ${p.nome}`}
-                      className="h-8 flex-1"
-                      value={editando.nome}
-                      onChange={(e) => setEditando({ id: p.id, nome: e.target.value })}
-                      onBlur={salvarNome}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                        if (e.key === "Escape") setEditando(null);
+                    <form
+                      className="flex flex-1 items-center gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        salvarNome();
                       }}
-                    />
+                    >
+                      <Input
+                        autoFocus
+                        aria-label={`Nome de ${p.nome}`}
+                        className="h-9 flex-1"
+                        value={editando.nome}
+                        onChange={(e) => setEditando({ id: p.id, nome: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditando(null);
+                        }}
+                      />
+                      <Button type="submit" size="icon" aria-label="Confirmar nome" className="size-9 flex-none">
+                        <Check aria-hidden="true" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Cancelar edição"
+                        className="size-9 flex-none text-ink-soft"
+                        onClick={() => setEditando(null)}
+                      >
+                        <X aria-hidden="true" />
+                      </Button>
+                    </form>
                   ) : (
                     <>
                       <span className="font-medium text-ink">{p.nome}</span>
