@@ -473,11 +473,8 @@ export function Calendario() {
                           <Territorios s={s} tamanho="selo" />
                           <button
                             type="button"
-                            aria-label={`Editar saída de ${diaDe(data)}`}
-                            onClick={() => {
-                              setDiaAberto(data);
-                              setEditando(s);
-                            }}
+                            aria-label={`Abrir saída de ${diaDe(data)}`}
+                            onClick={() => setDiaAberto(data)}
                             className="nao-imprime -mr-1 grid size-9 flex-none place-items-center rounded-lg text-ink-faint hover:bg-mist hover:text-jwblue"
                           >
                             <ChevronRight className="size-4" aria-hidden="true" />

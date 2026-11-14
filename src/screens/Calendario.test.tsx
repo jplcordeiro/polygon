@@ -95,6 +95,17 @@ describe("lista do celular", () => {
     expect(rolar.mock.contexts[0]).toHaveTextContent(/hoje/i);
     expect(rolar.mock.contexts[0]).toHaveTextContent("Gruta da Ilha");
   });
+
+  it("abre o dia com o atalho para marcar quadras, não o formulário", async () => {
+    montar();
+    const abrir = await screen.findAllByRole("button", { name: /Abrir saída de/ });
+    fireEvent.click(abrir[0]);
+
+    expect(
+      await screen.findByRole("link", { name: /Nº 6/ }),
+    ).toHaveAttribute("href", "/saida/s1/territorio/t1");
+    expect(screen.queryByText("Editando uma saída")).not.toBeInTheDocument();
+  });
 });
 
 describe("Calendario", () => {
