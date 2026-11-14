@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 type Modo = "entrar" | "criar";
 
-const SENHA_MINIMA = 6;
+export const SENHA_MINIMA = 6;
 
 function erroDoCadastro(error: { code?: string; message: string }) {
   if (error.code === "user_already_exists" || /already registered/i.test(error.message))
@@ -28,6 +28,28 @@ export function Login() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [confirmarEm, setConfirmarEm] = useState<string | null>(null);
+  const [esqueci, setEsqueci] = useState(false);
+  const [linkEnviadoPara, setLinkEnviadoPara] = useState<string | null>(null);
+
+  async function enviarLink(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setEnviando(true);
+    const endereco = email.trim().toLowerCase();
+    const { error } = await supabase.auth.resetPasswordForEmail(endereco, {
+      redirectTo: window.location.origin,
+    });
+    setEnviando(false);
+    if (error) setErro("Não foi possível enviar o link. Tente novamente em alguns minutos.");
+    else setLinkEnviadoPara(endereco);
+  }
+
+  function voltarParaEntrar() {
+    setEsqueci(false);
+    setLinkEnviadoPara(null);
+    setConfirmarEm(null);
+    trocar("entrar");
+  }
 
   function trocar(m: Modo) {
     setModo(m);
@@ -94,7 +116,55 @@ export function Login() {
           </p>
         </div>
 
-        {confirmarEm ? (
+        {esqueci ? (
+          <div className="mt-8 rounded-xl border border-line bg-card p-6 shadow-card">
+            {linkEnviadoPara ? (
+              <div role="status" className="grid justify-items-center gap-3 text-center">
+                <MailCheck className="size-8 text-sage" aria-hidden="true" />
+                <p className="text-sm text-ink-soft">
+                  Se houver uma conta para{" "}
+                  <b className="font-medium text-ink">{linkEnviadoPara}</b>, enviamos um
+                  link para criar uma nova senha.
+                </p>
+                <Button variant="outline" className="mt-2 cursor-pointer" onClick={voltarParaEntrar}>
+                  Voltar para entrar
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={enviarLink} className="grid gap-4">
+                <div className="grid gap-1">
+                  <p className="text-base font-semibold text-ink">Esqueci minha senha</p>
+                  <p className="text-sm text-ink-soft">
+                    Informe o e-mail da conta. Enviamos um link para criar uma nova senha.
+                  </p>
+                </div>
+                <div className="grid gap-1.5">
+                  <label htmlFor="email" className="text-sm font-medium text-ink">
+                    E-mail
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    aria-invalid={erro != null}
+                    required
+                  />
+                </div>
+                <p role="alert" aria-live="polite" className="min-h-5 text-sm text-danger">
+                  {erro}
+                </p>
+                <Button type="submit" size="lg" disabled={enviando} className="cursor-pointer">
+                  {enviando ? "Enviando…" : "Enviar link"}
+                </Button>
+                <Button type="button" variant="ghost" className="cursor-pointer" onClick={voltarParaEntrar}>
+                  Voltar para entrar
+                </Button>
+              </form>
+            )}
+          </div>
+        ) : confirmarEm ? (
           <div
             role="status"
             className="mt-8 grid justify-items-center gap-3 rounded-xl border border-line bg-card p-6 text-center shadow-card"
@@ -108,10 +178,7 @@ export function Login() {
             <Button
               variant="outline"
               className="mt-2 cursor-pointer"
-              onClick={() => {
-                setConfirmarEm(null);
-                trocar("entrar");
-              }}
+              onClick={voltarParaEntrar}
             >
               Voltar para entrar
             </Button>
@@ -195,6 +262,19 @@ export function Login() {
                     ? "Criando conta…"
                     : "Criar conta"}
               </Button>
+              {modo === "entrar" && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="cursor-pointer text-ink-soft"
+                  onClick={() => {
+                    setErro(null);
+                    setEsqueci(true);
+                  }}
+                >
+                  Esqueci minha senha
+                </Button>
+              )}
             </form>
           </div>
         )}

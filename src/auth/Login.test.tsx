@@ -4,11 +4,13 @@ import { Login } from "./Login";
 
 const signUp = vi.fn();
 const signInWithPassword = vi.fn();
+const resetPasswordForEmail = vi.fn();
 vi.mock("../lib/supabase", () => ({
   supabase: {
     auth: {
       signUp: (...a: unknown[]) => signUp(...a),
       signInWithPassword: (...a: unknown[]) => signInWithPassword(...a),
+      resetPasswordForEmail: (...a: unknown[]) => resetPasswordForEmail(...a),
     },
   },
 }));
@@ -57,5 +59,20 @@ describe("Login", () => {
     criarConta("ana@exemplo.com", "123");
     expect(await screen.findByRole("alert")).toHaveTextContent(/6 caracteres/i);
     expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it("manda o link para redefinir a senha", async () => {
+    resetPasswordForEmail.mockResolvedValue({ error: null });
+    render(<Login />);
+    fireEvent.click(screen.getByRole("button", { name: "Esqueci minha senha" }));
+    fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: " Ana@Exemplo.com " } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar link" }));
+
+    await waitFor(() =>
+      expect(resetPasswordForEmail).toHaveBeenCalledWith("ana@exemplo.com", {
+        redirectTo: window.location.origin,
+      }),
+    );
+    expect(await screen.findByText(/link para criar uma nova senha/i)).toBeInTheDocument();
   });
 });

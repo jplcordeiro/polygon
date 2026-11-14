@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./auth/useSession";
 import { Login } from "./auth/Login";
+import { NovaSenha } from "./auth/NovaSenha";
 import { AdminContext, ehAdmin, inicioDe } from "./auth/papel";
 import { Gestao } from "./screens/Gestao";
 import { Cadastro } from "./screens/Cadastro";
@@ -34,7 +35,7 @@ function AppBoot() {
 }
 
 export default function App() {
-  const { session, loading } = useSession();
+  const { session, loading, recuperando, fimDaRecuperacao } = useSession();
   const userId = session?.user.id;
   const [admin, setAdmin] = useState<boolean | null>(null);
 
@@ -45,6 +46,7 @@ export default function App() {
 
   if (loading) return <AppBoot />;
   if (!session) return <Login />;
+  if (recuperando) return <NovaSenha onPronto={fimDaRecuperacao} />;
   if (admin === null) return <AppBoot />;
   return (
     <AdminContext.Provider value={admin}>
