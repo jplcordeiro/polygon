@@ -51,9 +51,11 @@ vi.mock("../lib/territorios", async (orig) => {
   };
 });
 vi.mock("../lib/publicadores", () => ({
-  listPublicadores: vi
+  listNomesPublicadores: vi
     .fn()
-    .mockResolvedValue([{ id: "p1", nome: "Kleber", telefone: null, created_at: "" }]),
+    .mockResolvedValue([
+      { id: "p1", nome: "Kleber", telefone: null, created_at: "", user_id: "conta-kleber" },
+    ]),
 }));
 vi.mock("../lib/quadras", async (orig) => {
   const actual = await (orig() as Promise<Record<string, unknown>>);
@@ -79,9 +81,33 @@ function montar() {
 vi.mock("../lib/rodadas", async (orig) => ({
   ...(await (orig() as Promise<Record<string, unknown>>)),
   listRodadas: vi.fn().mockResolvedValue([]),
-  comecarRodada: vi.fn().mockResolvedValue(undefined),
   comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
 }));
+
+const rolar = vi.fn();
+Element.prototype.scrollIntoView = rolar;
+
+describe("lista do celular", () => {
+  it("rola até o card de hoje ao abrir", async () => {
+    rolar.mockClear();
+    montar();
+
+    await waitFor(() => expect(rolar).toHaveBeenCalledTimes(1));
+    expect(rolar.mock.contexts[0]).toHaveTextContent(/hoje/i);
+    expect(rolar.mock.contexts[0]).toHaveTextContent("Gruta da Ilha");
+  });
+
+  it("abre o dia com o atalho para marcar quadras, não o formulário", async () => {
+    montar();
+    const abrir = await screen.findAllByRole("button", { name: /Abrir saída de/ });
+    fireEvent.click(abrir[0]);
+
+    expect(
+      await screen.findByRole("link", { name: /Nº 6/ }),
+    ).toHaveAttribute("href", "/saida/s1/territorio/t1");
+    expect(screen.queryByText("Editando uma saída")).not.toBeInTheDocument();
+  });
+});
 
 describe("Calendario", () => {
   it("mostra o ponto de encontro, o dirigente e o território da saída", async () => {
@@ -214,5 +240,58 @@ describe("exportar a escala em PDF", () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Não foi possível gerar o PDF."),
     );
+  });
+});
+
+describe("usuário comum", () => {
+  it("vê as saídas sem nenhum controle de edição", async () => {
+    const { AdminContext } = await import("../auth/papel");
+    render(
+      <AdminContext.Provider value={false}>
+        <MemoryRouter>
+          <Calendario />
+        </MemoryRouter>
+      </AdminContext.Provider>,
+    );
+    await waitFor(() =>
+      expect(screen.getAllByText("Gruta da Ilha").length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByRole("button", { name: /adicionar saída/i })).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("Todos os domingos temos duas saídas.")).toHaveAttribute(
+      "readonly",
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Abrir saída de/ })[0]);
+    expect(await screen.findByText(/saída\(s\) neste dia/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /excluir/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Nº 6/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("minhas saídas", () => {
+  it("destaca a saída que a conta logada dirige", async () => {
+    const { ContaContext } = await import("../auth/papel");
+    render(
+      <ContaContext.Provider value="conta-kleber">
+        <MemoryRouter>
+          <Calendario />
+        </MemoryRouter>
+      </ContaContext.Provider>,
+    );
+    expect(await screen.findByText("você dirige")).toBeInTheDocument();
+  });
+
+  it("não destaca nada para quem não é o dirigente", async () => {
+    const { ContaContext } = await import("../auth/papel");
+    render(
+      <ContaContext.Provider value="outra-conta">
+        <MemoryRouter>
+          <Calendario />
+        </MemoryRouter>
+      </ContaContext.Provider>,
+    );
+    await waitFor(() => expect(screen.getAllByText("Gruta da Ilha").length).toBeGreaterThan(0));
+    expect(screen.queryByText("você dirige")).not.toBeInTheDocument();
   });
 });

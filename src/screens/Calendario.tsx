@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,7 +23,8 @@ import { listTerritorios, quadrasDe } from "../lib/territorios";
 import { listMarcas, marcasDaRodada, type Marca } from "../lib/quadras";
 import { comRodada, listRodadas } from "../lib/rodadas";
 import type { Rodada } from "../lib/types";
-import { listPublicadores } from "../lib/publicadores";
+import { listNomesPublicadores } from "../lib/publicadores";
+import { useAdmin, useConta } from "../auth/papel";
 import { escalaDoMes } from "../lib/escala";
 import type { Publicador, Saida, Territorio } from "../lib/types";
 import { TerritorioGlyph } from "./TerritorioGlyph";
@@ -70,6 +71,8 @@ function hojeISO() {
 }
 
 export function Calendario() {
+  const admin = useAdmin();
+  const conta = useConta();
   const hoje = hojeISO();
   const [mes, setMes] = useState<Mes>(() => {
     const d = new Date();
@@ -93,7 +96,7 @@ export function Calendario() {
     const [s, t, p, n, m, r] = await Promise.all([
       listSaidas(iso(mes, 1), iso({ ano: mes.ano, mes: mes.mes + 1 }, 0)),
       listTerritorios(),
-      listPublicadores(),
+      listNomesPublicadores(),
       notaDoMes(mes),
       listMarcas(),
       listRodadas(),
@@ -113,6 +116,8 @@ export function Calendario() {
   }, [mes]);
 
   const territorioDe = (id: string) => territorios.find((t) => t.id === id);
+  const meuPublicador = publicadores.find((p) => conta && p.user_id === conta)?.id;
+  const ehMinha = (s: Saida) => !!meuPublicador && s.publicador_id === meuPublicador;
   const nomePub = (id: string | null) =>
     id ? (publicadores.find((p) => p.id === id)?.nome ?? "?") : null;
   const locais = locaisUsados(saidas);
@@ -171,6 +176,14 @@ export function Calendario() {
   const diasComSaida = grade.filter(
     (d) => mesmoMes(d, mes) && saidasDoDia(saidas, d).length > 0,
   );
+  const proximoDia = mesmoMes(hoje, mes)
+    ? diasComSaida.find((d) => d >= hoje)
+    : undefined;
+  const proximoDiaRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (!carregando) proximoDiaRef.current?.scrollIntoView({ block: "start" });
+  }, [carregando]);
 
   function Territorios({ s, tamanho }: { s: Saida; tamanho: "selo" | "texto" }) {
     if (s.territorio_ids.length === 0) return null;
@@ -220,7 +233,7 @@ export function Calendario() {
   }
 
   function QuadrasDaSaida({ s }: { s: Saida }) {
-    if (s.territorio_ids.length === 0) return null;
+    if (!admin || s.territorio_ids.length === 0) return null;
     return (
       <ul className="grid gap-1 border-t border-line pt-2.5">
         {s.territorio_ids.map((id) => {
@@ -403,7 +416,9 @@ export function Calendario() {
           <ol className="grid gap-2.5 font-escala sm:hidden">
             {diasComSaida.length === 0 ? (
               <p className="py-6 text-center text-[0.9rem] text-ink-soft">
-                Nenhuma saída neste mês. Toque em “Adicionar saída” para começar.
+                {admin
+                  ? "Nenhuma saída neste mês. Toque em “Adicionar saída” para começar."
+                  : "Nenhuma saída marcada neste mês."}
               </p>
             ) : (
               diasComSaida.map((data) => {
@@ -412,8 +427,9 @@ export function Calendario() {
                 return (
                   <li
                     key={data}
+                    ref={data === proximoDia ? proximoDiaRef : undefined}
                     className={cn(
-                      "overflow-hidden rounded-xl border bg-white shadow-card",
+                      "scroll-mt-3 overflow-hidden rounded-xl border bg-white shadow-card",
                       ehHoje ? "border-jwblue" : "border-line",
                     )}
                   >
@@ -436,7 +452,10 @@ export function Calendario() {
                       {saidasDoDia(saidas, data).map((s) => (
                         <li
                           key={s.id}
-                          className="flex items-center gap-3 border-t border-line px-3.5 py-3 first:border-0"
+                          className={cn(
+                            "flex items-center gap-3 border-t border-line px-3.5 py-3 first:border-0",
+                            ehMinha(s) && "border-l-4 border-l-jwblue bg-jwblue-wash",
+                          )}
                         >
                           <div className="grid min-w-0 flex-1 gap-0.5">
                             <Eyebrow s={s} />
@@ -454,6 +473,11 @@ export function Calendario() {
                               )}
                             >
                               {nomePub(s.publicador_id) ?? "dirigente a definir"}
+                              {ehMinha(s) && (
+                                <span className="ml-2 rounded bg-jwblue px-1.5 py-0.5 text-[0.7rem] font-semibold text-white">
+                                  você dirige
+                                </span>
+                              )}
                             </span>
                             {s.observacao && (
                               <span className="text-[0.78rem] italic text-ink-soft">
@@ -464,11 +488,8 @@ export function Calendario() {
                           <Territorios s={s} tamanho="selo" />
                           <button
                             type="button"
-                            aria-label={`Editar saída de ${diaDe(data)}`}
-                            onClick={() => {
-                              setDiaAberto(data);
-                              setEditando(s);
-                            }}
+                            aria-label={`Abrir saída de ${diaDe(data)}`}
+                            onClick={() => setDiaAberto(data)}
                             className="nao-imprime -mr-1 grid size-9 flex-none place-items-center rounded-lg text-ink-faint hover:bg-mist hover:text-jwblue"
                           >
                             <ChevronRight className="size-4" aria-hidden="true" />
@@ -482,7 +503,7 @@ export function Calendario() {
             )}
           </ol>
 
-          <section className="grid gap-2">
+          <section className={cn("grid gap-2", !admin && !nota && "hidden")}>
             <h2 className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-ink-soft">
               Avisos do mês
             </h2>
@@ -490,6 +511,7 @@ export function Calendario() {
               value={nota}
               onChange={(e) => setNota(e.target.value)}
               onBlur={gravarNota}
+              readOnly={!admin}
               rows={2}
               placeholder="Todos os domingos temos duas saídas, em locais diferentes."
               className="resize-y border-line bg-white text-[0.88rem] print:border-0 print:bg-transparent print:p-0"
@@ -498,19 +520,21 @@ export function Calendario() {
         </>
       )}
 
-      <div className="nao-imprime pointer-events-none sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 flex justify-center sm:hidden">
-        <Button
-          size="lg"
-          className="pointer-events-auto shadow-card"
-          onClick={() => {
-            setDiaAberto(hoje);
-            setEditando("nova");
-          }}
-        >
-          <Plus aria-hidden="true" />
-          Adicionar saída
-        </Button>
-      </div>
+      {admin && (
+        <div className="nao-imprime pointer-events-none sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 flex justify-center sm:hidden">
+          <Button
+            size="lg"
+            className="pointer-events-auto shadow-card"
+            onClick={() => {
+              setDiaAberto(hoje);
+              setEditando("nova");
+            }}
+          >
+            <Plus aria-hidden="true" />
+            Adicionar saída
+          </Button>
+        </div>
+      )}
 
       <Sheet open={diaAberto !== null} onOpenChange={(v) => !v && fecharDia()}>
         <SheetContent
@@ -582,52 +606,56 @@ export function Calendario() {
 
                         <QuadrasDaSaida s={s} />
 
-                        <div className="flex gap-2 border-t border-line pt-2.5">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditando(s)}
-                          >
-                            Editar
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-ink-soft hover:text-destructive"
-                              >
-                                <Trash2 aria-hidden="true" />
-                                Excluir
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir esta saída?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. As outras saídas do
-                                  mês não são afetadas.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  variant="destructive"
-                                  onClick={() => excluir(s)}
+                        {admin && (
+                          <div className="flex gap-2 border-t border-line pt-2.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditando(s)}
+                            >
+                              Editar
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-ink-soft hover:text-destructive"
                                 >
+                                  <Trash2 aria-hidden="true" />
                                   Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir esta saída?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. As outras saídas do
+                                    mês não são afetadas.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    variant="destructive"
+                                    onClick={() => excluir(s)}
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
                       </div>
                     ))}
 
-                    <Button variant="outline" onClick={() => setEditando("nova")}>
-                      <Plus aria-hidden="true" />
-                      Adicionar saída
-                    </Button>
+                    {admin && (
+                      <Button variant="outline" onClick={() => setEditando("nova")}>
+                        <Plus aria-hidden="true" />
+                        Adicionar saída
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

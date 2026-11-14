@@ -14,11 +14,13 @@ export type Bounds = [[number, number], [number, number]];
 
 export function BaseMap({
   showLocation = false,
+  centralizarAoAbrir = true,
   initialViewState,
   bounds,
   children,
 }: {
   showLocation?: boolean;
+  centralizarAoAbrir?: boolean;
   initialViewState?: ViewState;
   bounds?: Bounds;
   children?: ReactNode;
@@ -36,7 +38,7 @@ export function BaseMap({
           : (initialViewState ?? { longitude: -46.63, latitude: -23.55, zoom: 13 })
       }
       onLoad={() => {
-        if (showLocation) geolocate.current?.trigger();
+        if (showLocation && centralizarAoAbrir) geolocate.current?.trigger();
       }}
     >
       {!showLocation && <NavigationControl position="top-right" />}

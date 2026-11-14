@@ -5,15 +5,19 @@ import { supabase } from "../lib/supabase";
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recuperando, setRecuperando] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
     });
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange((evento, s) => {
+      setSession(s);
+      if (evento === "PASSWORD_RECOVERY") setRecuperando(true);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
-  return { session, loading };
+  return { session, loading, recuperando, fimDaRecuperacao: () => setRecuperando(false) };
 }

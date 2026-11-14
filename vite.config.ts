@@ -25,7 +25,6 @@ export default defineConfig({
       workbox: {
         globIgnores: [
           "**/react-pdf*.js",
-          "**/RelatorioPdf*.js",
           "**/EscalaPdf*.js",
           "**/fontes*.js",
         ],

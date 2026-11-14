@@ -13,12 +13,14 @@ import {
 } from "../lib/quadras";
 import type { Marca, Parada } from "../lib/quadras";
 import { comRodada, listRodadas } from "../lib/rodadas";
-import { listPublicadores } from "../lib/publicadores";
+import { listNomesPublicadores } from "../lib/publicadores";
+import { inicioDe, useAdmin } from "../auth/papel";
 import type { Publicador, Rodada, Territorio } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { RadarLoader } from "../components/RadarLoader";
 
 export function Campo() {
+  const admin = useAdmin();
   const { id } = useParams();
   const [t, setT] = useState<Territorio | null>(null);
   const [marcas, setMarcas] = useState<Marca[]>([]);
@@ -33,7 +35,7 @@ export function Campo() {
       listTerritorios(),
       listMarcas(),
       listParadas(),
-      listPublicadores(),
+      listNomesPublicadores(),
       listRodadas(),
     ])
       .then(([todos, marcadas, paradasList, pubs, rods]) => {
@@ -74,7 +76,9 @@ export function Campo() {
             </p>
           </div>
           <Button asChild>
-            <Link to="/">Voltar aos territórios</Link>
+            <Link to={inicioDe(admin)}>
+              {admin ? "Voltar aos territórios" : "Voltar ao mapa"}
+            </Link>
           </Button>
         </div>
       </div>
@@ -108,11 +112,11 @@ export function Campo() {
       </BaseMap>
 
       <Link
-        to="/"
+        to={inicioDe(admin)}
         className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white/90 px-2.5 text-[0.85rem] font-medium text-ink shadow-card backdrop-blur transition-colors hover:text-jwblue"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Territórios
+        {admin ? "Territórios" : "Mapa"}
       </Link>
     </div>
   );

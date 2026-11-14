@@ -10,6 +10,15 @@ export async function listPublicadores(): Promise<Publicador[]> {
   return data as Publicador[];
 }
 
+export async function listNomesPublicadores(): Promise<Publicador[]> {
+  const { data, error } = await supabase
+    .from("publicador_nome")
+    .select("*")
+    .order("nome");
+  if (error) throw error;
+  return data as Publicador[];
+}
+
 export async function criarPublicador(input: {
   nome: string;
   telefone?: string;

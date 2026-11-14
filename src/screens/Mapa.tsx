@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAdmin } from "../auth/papel";
 import { BaseMap } from "../map/BaseMap";
 import { TerritoriosLayer } from "../map/TerritoriosLayer";
 import { listTerritorios, boundsDeTerritorios } from "../lib/territorios";
@@ -8,6 +9,7 @@ import { RadarLoader } from "../components/RadarLoader";
 import { Button } from "@/components/ui/button";
 
 export function Mapa() {
+  const admin = useAdmin();
   const [territorios, setTerritorios] = useState<Territorio[]>([]);
   const [carregando, setCarregando] = useState(true);
   const navigate = useNavigate();
@@ -45,19 +47,23 @@ export function Mapa() {
               Nenhum território mapeado ainda
             </h1>
             <p className="text-[0.9rem] text-ink-soft">
-              Desenhe o limite de um território para vê-lo aqui no mapa.
+              {admin
+                ? "Desenhe o limite de um território para vê-lo aqui no mapa."
+                : "Os territórios aparecem aqui assim que um admin cadastrá-los."}
             </p>
           </div>
-          <Button asChild>
-            <Link to="/cadastro">Cadastrar território</Link>
-          </Button>
+          {admin && (
+            <Button asChild>
+              <Link to="/cadastro">Cadastrar território</Link>
+            </Button>
+          )}
         </div>
       </div>
     );
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <BaseMap bounds={bounds}>
+      <BaseMap showLocation centralizarAoAbrir={false} bounds={bounds}>
         <TerritoriosLayer
           territorios={territorios}
           onSelect={(id) => navigate(`/campo/${id}`)}
