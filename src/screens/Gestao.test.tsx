@@ -110,7 +110,7 @@ async function montar(
       <Gestao />
     </MemoryRouter>,
   );
-  await waitFor(() => expect(screen.getByText("Centro")).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("link", { name: "12" })).toBeInTheDocument());
 }
 
 describe("Gestao", () => {

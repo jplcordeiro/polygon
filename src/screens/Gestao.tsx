@@ -209,9 +209,6 @@ export function Gestao() {
                         aria-hidden="true"
                       />
                     </Link>
-                    <span className="truncate text-[0.9rem] text-ink-soft">
-                      {t.nome ?? "Sem nome"}
-                    </span>
                   </div>
 
                   <div className="grid justify-items-end gap-0.75 text-right">
