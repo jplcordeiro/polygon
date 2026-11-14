@@ -17,23 +17,13 @@ import {
   type Marca,
   type Parada,
 } from "../lib/quadras";
-import { comecarRodada, listRodadas, rodadaEm } from "../lib/rodadas";
+import { listRodadas, rodadaEm } from "../lib/rodadas";
 import { listPublicadores } from "../lib/publicadores";
 import { buscarSaida, dataBR, diaDaSemana, DIA_SEMANA } from "../lib/saidas";
 import type { Publicador, Rodada, Saida, Territorio } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RadarLoader } from "../components/RadarLoader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 type Modo = "feita" | "parada";
 
@@ -46,7 +36,6 @@ export function MarcarQuadras() {
   const [publicadores, setPublicadores] = useState<Publicador[]>([]);
   const [rodadas, setRodadas] = useState<Rodada[]>([]);
   const [modo, setModo] = useState<Modo>("feita");
-  const [confirmarRodada, setConfirmarRodada] = useState(false);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -120,6 +109,7 @@ export function MarcarQuadras() {
     else if (paradaAtual.has(q.id)) estados[q.id] = "andamento";
   }
   const feitas = desteDia.size + deOutroDia.size;
+  const concluido = quadras.length > 0 && feitas === quadras.length;
   const pinos = [...paradaAtual.values()].map((p) => ({
     quadraId: p.quadra_id,
     lng: p.lng,
@@ -167,6 +157,8 @@ export function MarcarQuadras() {
       else {
         await marcarQuadra(saida.id, territorio.id, quadraId);
         if (tinhaPino) await limparParada(territorio.id, quadraId);
+        if (feitas + 1 === quadras.length)
+          toast.success(`Território Nº ${territorio.numero} concluído nesta rodada.`);
       }
     } catch {
       setMarcas(antesM);
@@ -213,29 +205,11 @@ export function MarcarQuadras() {
     if (jaFeitaEmOutra) {
       toast.info(
         `Esta quadra já foi feita na saída de ${dataBR(jaFeitaEmOutra.data)}.`,
-        {
-          action: {
-            label: "Começar nova rodada",
-            onClick: () => setConfirmarRodada(true),
-          },
-        },
       );
       return;
     }
     if (modo === "feita") await marcarFeita(quadraId);
     else await marcarParada(quadraId, lngLat);
-  }
-
-  async function novaRodadaAqui() {
-    if (!saida || !territorio) return;
-    setConfirmarRodada(false);
-    try {
-      await comecarRodada(territorio.id, saida.data);
-      setRodadas(await listRodadas());
-      toast.success(`Nova rodada começada em ${dataBR(saida.data)}.`);
-    } catch {
-      toast.error("Não foi possível começar a nova rodada. Tente novamente.");
-    }
   }
 
   async function removerPino(quadraId: string) {
@@ -324,33 +298,15 @@ export function MarcarQuadras() {
             {feitas} de {quadras.length} quadras feitas nesta rodada
           </span>
           <span className="text-[0.8rem] text-ink-soft">
-            {modo === "feita"
+            {concluido
+              ? "Todas as quadras feitas. A próxima começa em Territórios → Nova rodada em todos."
+              : modo === "feita"
               ? "Toque numa quadra para marcar o que foi feito neste dia."
               : "Toque no mapa onde o grupo parou. Toque no pino para remover."}
           </span>
         </div>
       </div>
 
-      <AlertDialog open={confirmarRodada} onOpenChange={setConfirmarRodada}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Começar nova rodada no Território Nº {territorio.numero}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              A contagem recomeça do zero a partir de {dataBR(saida.data)}, a data
-              desta saída, para que o que você marcar hoje entre na rodada nova. As
-              marcas antigas continuam guardadas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={novaRodadaAqui}>
-              Começar nova rodada
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

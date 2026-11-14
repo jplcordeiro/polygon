@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     port: 3000,
     strictPort: true,
@@ -19,9 +19,16 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    basicSsl(),
+    mode === "lan" && basicSsl(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        globIgnores: [
+          "**/react-pdf*.js",
+          "**/EscalaPdf*.js",
+          "**/fontes*.js",
+        ],
+      },
       manifest: {
         name: "polygon",
         short_name: "polygon",
@@ -37,4 +44,4 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/setupTests.ts"],
   },
-});
+}));

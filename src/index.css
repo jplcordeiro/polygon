@@ -178,29 +178,24 @@
   }
 }
 
-/* ---- Folha do mês: a grade impressa em paisagem, para circular no grupo ---- */
+/* ---- Ninguém imprime pelo navegador: as duas telas exportam PDF (src/pdf/).
+   O que sobra existe só para um Ctrl+P acidental não sair grotesco. ---- */
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 10mm;
+    margin: 12mm;
   }
+  html,
   body {
+    height: auto;
+    overflow: visible;
     background: #fff;
+  }
+  [data-casca] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   .nao-imprime {
     display: none !important;
-  }
-  .folha {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  .folha-grade {
-    display: grid !important;
-  }
-  .folha-agenda {
-    display: none !important;
-  }
-  .folha details::details-content {
-    content-visibility: visible !important;
   }
 }

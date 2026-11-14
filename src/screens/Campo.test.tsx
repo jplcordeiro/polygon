@@ -35,7 +35,7 @@ vi.mock("../lib/quadras", async (importOriginal) => ({
   listParadas: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("../lib/publicadores", () => ({
-  listPublicadores: vi.fn().mockResolvedValue([]),
+  listNomesPublicadores: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("../lib/territorios", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/territorios")>()),
@@ -91,7 +91,6 @@ vi.mock("../lib/territorios", async (importOriginal) => ({
 vi.mock("../lib/rodadas", async (orig) => ({
   ...(await (orig() as Promise<Record<string, unknown>>)),
   listRodadas: vi.fn().mockResolvedValue([]),
-  comecarRodada: vi.fn().mockResolvedValue(undefined),
   comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
 }));
 

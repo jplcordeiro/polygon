@@ -8,11 +8,11 @@ import {
   paradaAtualDe,
   quadrasFeitasDe,
   progressoDe,
-  passagensDoMes,
 } from "./quadras";
 import type { Marca, Parada } from "./quadras";
 import type { EmRodada } from "./rodadas";
 import type { Publicador } from "./types";
+import { LINHAS_POR_PAGINA } from "./supabase";
 
 const linhas: Record<string, unknown[]> = {
   quadra_feita: [],
@@ -20,17 +20,34 @@ const linhas: Record<string, unknown[]> = {
   ponto_parada: [],
 };
 const selects: string[] = [];
+const faixas: Record<string, [number, number][]> = {};
 
-vi.mock("./supabase", () => ({
-  supabase: {
-    from: (tabela: string) => ({
-      select: (colunas: string) => {
-        selects.push(`${tabela}: ${colunas}`);
-        return Promise.resolve({ data: linhas[tabela], error: null });
-      },
-    }),
-  },
-}));
+vi.mock("./supabase", async (orig) => {
+  const actual = await (orig() as Promise<Record<string, unknown>>);
+  return {
+    ...actual,
+    supabase: {
+      from: (tabela: string) => ({
+        select: (colunas: string) => {
+          selects.push(`${tabela}: ${colunas}`);
+          const resposta = Promise.resolve({
+            data: linhas[tabela],
+            error: null,
+          });
+          const consulta = {
+            order: () => consulta,
+            range: (de: number, ate: number) => {
+              (faixas[tabela] ??= []).push([de, ate]);
+              return resposta;
+            },
+            then: resposta.then.bind(resposta),
+          };
+          return consulta;
+        },
+      }),
+    },
+  };
+});
 
 function quadrado(lng: number, lat: number): GeoJSON.Polygon {
   return {
@@ -95,6 +112,16 @@ describe("listMarcas", () => {
 
     const pedido = selects.find((s) => s.startsWith("quadra_feita:")) ?? "";
     expect(pedido).not.toMatch(/saida\s*\(/);
+  });
+
+  it("pagina quadra_feita para não parar no teto de linhas do PostgREST", async () => {
+    linhas.quadra_feita = [];
+    linhas.saida = [];
+    faixas.quadra_feita = [];
+
+    await listMarcas();
+
+    expect(faixas.quadra_feita).toEqual([[0, LINHAS_POR_PAGINA - 1]]);
   });
 
   it("traz data, local e dirigente de cada marca a partir da saída dela", async () => {
@@ -277,6 +304,16 @@ describe("progressoDe", () => {
 });
 
 describe("listParadas", () => {
+  it("pagina ponto_parada para não parar no teto de linhas do PostgREST", async () => {
+    linhas.ponto_parada = [];
+    linhas.saida = [];
+    faixas.ponto_parada = [];
+
+    await listParadas();
+
+    expect(faixas.ponto_parada).toEqual([[0, LINHAS_POR_PAGINA - 1]]);
+  });
+
   it("traz data, local e dirigente do pino a partir da saída dele", async () => {
     linhas.ponto_parada = [
       { territorio_id: "t1", quadra_id: "qa", saida_id: "s1", lng: -46.1, lat: -23.2 },
@@ -352,84 +389,5 @@ describe("paradaAtualDe", () => {
     const t = territorio(["a"]);
     const atual = paradaAtualDe(t, [], [parada("sumiu", "2026-07-12")]);
     expect(atual.size).toBe(0);
-  });
-});
-
-describe("passagensDoMes", () => {
-  const julho = { ano: 2026, mes: 7 };
-
-  it("agrupa as marcas por saída, em ordem de data", () => {
-    const marcas: Marca[] = [
-      { ...marca("qb", "2026-07-19", "s3"), local: "Salão" },
-      { ...marca("qa", "2026-07-05", "s1"), local: "Salão" },
-      { ...marca("qc", "2026-07-12", "s2"), local: "Praça da Matriz" },
-    ];
-
-    expect(passagensDoMes(territorio(["qa", "qb", "qc"]), julho, marcas)).toEqual([
-      { saida_id: "s1", data: "2026-07-05", local: "Salão", quadras: 1 },
-      { saida_id: "s2", data: "2026-07-12", local: "Praça da Matriz", quadras: 1 },
-      { saida_id: "s3", data: "2026-07-19", local: "Salão", quadras: 1 },
-    ]);
-  });
-
-  it("conta quadras distintas dentro da mesma saída", () => {
-    const marcas = [
-      marca("qa", "2026-07-05"),
-      marca("qb", "2026-07-05"),
-      marca("qa", "2026-07-05"),
-    ];
-
-    expect(passagensDoMes(territorio(["qa", "qb"]), julho, marcas)).toEqual([
-      { saida_id: "s1", data: "2026-07-05", local: null, quadras: 2 },
-    ]);
-  });
-
-  it("ignora marcas de outro mês", () => {
-    const marcas = [marca("qa", "2026-06-28"), marca("qb", "2026-07-05", "s2")];
-
-    expect(passagensDoMes(territorio(["qa", "qb"]), julho, marcas)).toEqual([
-      { saida_id: "s2", data: "2026-07-05", local: null, quadras: 1 },
-    ]);
-  });
-
-  it("ignora marcas de outro território", () => {
-    const marcas: Marca[] = [
-      { ...marca("qa", "2026-07-05"), territorio_id: "outro" },
-    ];
-
-    expect(passagensDoMes(territorio(["qa"]), julho, marcas)).toEqual([]);
-  });
-
-  it("ignora marca cuja quadra sumiu do desenho", () => {
-    const marcas = [marca("qa", "2026-07-05"), marca("apagada", "2026-07-05")];
-
-    expect(passagensDoMes(territorio(["qa"]), julho, marcas)).toEqual([
-      { saida_id: "s1", data: "2026-07-05", local: null, quadras: 1 },
-    ]);
-  });
-
-  it("devolve lista vazia quando o mês não teve passagem", () => {
-    expect(passagensDoMes(territorio(["qa"]), julho, [])).toEqual([]);
-  });
-
-  it("conta a quadra em cada saída que a marcou, mesmo repetida no mês", () => {
-    const marcas = [marca("qa", "2026-07-05", "s1"), marca("qa", "2026-07-19", "s2")];
-
-    expect(passagensDoMes(territorio(["qa"]), julho, marcas)).toEqual([
-      { saida_id: "s1", data: "2026-07-05", local: null, quadras: 1 },
-      { saida_id: "s2", data: "2026-07-19", local: null, quadras: 1 },
-    ]);
-  });
-
-  it("desempata saídas na mesma data pelo saida_id, para não depender da ordem do banco", () => {
-    const marcas = [
-      marca("qa", "2026-07-12", "s2"),
-      marca("qb", "2026-07-12", "s1"),
-    ];
-
-    expect(passagensDoMes(territorio(["qa", "qb"]), julho, marcas)).toEqual([
-      { saida_id: "s1", data: "2026-07-12", local: null, quadras: 1 },
-      { saida_id: "s2", data: "2026-07-12", local: null, quadras: 1 },
-    ]);
   });
 });

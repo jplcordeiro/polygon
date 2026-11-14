@@ -66,7 +66,6 @@ vi.mock("../lib/rodadas", async (orig) => {
   return {
     ...actual,
     listRodadas: vi.fn().mockResolvedValue([]),
-    comecarRodada: vi.fn().mockResolvedValue(undefined),
     comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
     hojeISO: () => "2026-07-19",
   };
@@ -110,7 +109,7 @@ async function montar(
       <Gestao />
     </MemoryRouter>,
   );
-  await waitFor(() => expect(screen.getByText("Centro")).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("link", { name: "12" })).toBeInTheDocument());
 }
 
 describe("Gestao", () => {
@@ -131,25 +130,16 @@ describe("Gestao", () => {
   it("mostra o território como concluído quando todas as quadras foram feitas", async () => {
     await montar([marca("qa"), marca("qb")]);
     expect(screen.getByText(/concluído/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /começar nova rodada/i }),
-    ).toBeInTheDocument();
   });
 
-  it("oferece nova rodada mesmo com quadras faltando", async () => {
-    await montar([marca("qa")]);
-    expect(
-      screen.getByRole("button", { name: /começar nova rodada/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("começar nova rodada registra uma rodada do território", async () => {
-    const { comecarRodada } = await import("../lib/rodadas");
+  it("só oferece nova rodada em todos, nunca por território", async () => {
     await montar([marca("qa"), marca("qb")]);
-
-    fireEvent.click(screen.getByRole("button", { name: /começar nova rodada/i }));
-
-    await waitFor(() => expect(comecarRodada).toHaveBeenCalledWith("t1"));
+    expect(
+      screen.queryByRole("button", { name: /^começar nova rodada$/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /nova rodada em todos/i }),
+    ).toBeInTheDocument();
   });
 
   it("a campanha registra a rodada em todos com data e nome", async () => {
@@ -172,32 +162,6 @@ describe("Gestao", () => {
         "Convites do congresso",
       ),
     );
-  });
-
-  it("devolver um território concluído oferece começar a nova rodada", async () => {
-    const { designacoesAbertas } = await import("../lib/designacoes");
-    const { comecarRodada } = await import("../lib/rodadas");
-    vi.mocked(designacoesAbertas).mockResolvedValue([
-      {
-        id: "d1",
-        territorio_id: "t1",
-        publicador_id: "p1",
-        data_saida: "2026-07-01",
-        data_devolucao: null,
-        created_at: "",
-      },
-    ]);
-    await montar([marca("qa"), marca("qb")]);
-
-    fireEvent.click(screen.getByRole("button", { name: /devolver/i }));
-
-    expect(await screen.findByText(/concluído\. começar nova rodada\?/i)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /agora não/i }));
-    await waitFor(() =>
-      expect(screen.queryByText(/começar nova rodada\?/i)).not.toBeInTheDocument(),
-    );
-    expect(comecarRodada).not.toHaveBeenCalled();
   });
 
   it("mostra quantas quadras estão em andamento além das feitas", async () => {

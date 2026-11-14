@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./auth/useSession";
 import { Login } from "./auth/Login";
+import { NovaSenha } from "./auth/NovaSenha";
+import { AdminContext, ContaContext, ehAdmin, inicioDe } from "./auth/papel";
 import { Gestao } from "./screens/Gestao";
 import { Cadastro } from "./screens/Cadastro";
 import { Campo } from "./screens/Campo";
@@ -8,7 +11,7 @@ import { MarcarQuadras } from "./screens/MarcarQuadras";
 import { Mapa } from "./screens/Mapa";
 import { Calendario } from "./screens/Calendario";
 import { Publicadores } from "./screens/Publicadores";
-import { Relatorio } from "./screens/Relatorio";
+import { Usuarios } from "./screens/Usuarios";
 import { LocatorSeal } from "./components/LocatorSeal";
 import { AppShell } from "./components/AppShell";
 
@@ -33,26 +36,48 @@ function AppBoot() {
 }
 
 export default function App() {
-  const { session, loading } = useSession();
+  const { session, loading, recuperando, fimDaRecuperacao } = useSession();
+  const userId = session?.user.id;
+  const [admin, setAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setAdmin(null);
+    if (userId) ehAdmin(userId).then(setAdmin, () => setAdmin(false));
+  }, [userId]);
+
   if (loading) return <AppBoot />;
   if (!session) return <Login />;
+  if (recuperando) return <NovaSenha onPronto={fimDaRecuperacao} />;
+  if (admin === null) return <AppBoot />;
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<Gestao />} />
-        <Route path="/mapa" element={<Mapa />} />
-        <Route path="/calendario" element={<Calendario />} />
-        <Route path="/publicadores" element={<Publicadores />} />
-        <Route path="/relatorio" element={<Relatorio />} />
-      </Route>
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/cadastro/:id" element={<Cadastro />} />
-      <Route path="/campo/:id" element={<Campo />} />
-      <Route
-        path="/saida/:saidaId/territorio/:territorioId"
-        element={<MarcarQuadras />}
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ContaContext.Provider value={session.user.id}>
+      <AdminContext.Provider value={admin}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/mapa" element={<Mapa />} />
+            <Route path="/calendario" element={<Calendario />} />
+            {admin && (
+              <>
+                <Route path="/" element={<Gestao />} />
+                <Route path="/publicadores" element={<Publicadores />} />
+                <Route path="/usuarios" element={<Usuarios />} />
+              </>
+            )}
+          </Route>
+          <Route path="/campo/:id" element={<Campo />} />
+          {admin && (
+            <>
+              <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/cadastro/:id" element={<Cadastro />} />
+              <Route
+                path="/saida/:saidaId/territorio/:territorioId"
+                element={<MarcarQuadras />}
+              />
+            </>
+          )}
+          <Route path="*" element={<Navigate to={inicioDe(admin)} replace />} />
+        </Routes>
+      </AdminContext.Provider>
+    </ContaContext.Provider>
   );
 }
