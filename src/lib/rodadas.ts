@@ -74,17 +74,6 @@ export async function listRodadas(): Promise<Rodada[]> {
   return data as Rodada[];
 }
 
-export async function comecarRodada(
-  territorio_id: string,
-  inicio: string = hojeISO(),
-  nome: string | null = null,
-): Promise<void> {
-  const { error } = await supabase
-    .from("rodada")
-    .upsert({ territorio_id, inicio, nome }, { onConflict: "territorio_id,inicio" });
-  if (error) throw error;
-}
-
 export async function comecarRodadaEmTodos(
   territorio_ids: string[],
   inicio: string = hojeISO(),

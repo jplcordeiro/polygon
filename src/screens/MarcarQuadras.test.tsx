@@ -94,10 +94,11 @@ vi.mock("../lib/publicadores", () => ({
 }));
 
 const toastInfo = vi.fn();
+const toastSuccess = vi.fn();
 vi.mock("sonner", () => ({
   toast: {
     info: (...args: unknown[]) => toastInfo(...args),
-    success: vi.fn(),
+    success: (...args: unknown[]) => toastSuccess(...args),
     error: vi.fn(),
   },
 }));
@@ -119,7 +120,6 @@ async function renderTela() {
 vi.mock("../lib/rodadas", async (orig) => ({
   ...(await (orig() as Promise<Record<string, unknown>>)),
   listRodadas: vi.fn().mockResolvedValue([]),
-  comecarRodada: vi.fn().mockResolvedValue(undefined),
   comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -151,6 +151,7 @@ describe("MarcarQuadras", () => {
       },
     ]);
     toastInfo.mockClear();
+    toastSuccess.mockClear();
   });
 
   it("mostra a data da saída que está sendo marcada, não a de hoje", async () => {
@@ -192,13 +193,19 @@ describe("MarcarQuadras", () => {
 
     expect(marcarQuadra).not.toHaveBeenCalled();
     expect(desmarcarQuadra).not.toHaveBeenCalled();
-    expect(toastInfo).toHaveBeenCalledWith(
-      expect.stringContaining("05/07/2026"),
-      expect.objectContaining({
-        action: expect.objectContaining({ label: "Começar nova rodada" }),
-      }),
-    );
+    expect(toastInfo).toHaveBeenCalledWith(expect.stringContaining("05/07/2026"));
+    expect(screen.queryByRole("button", { name: /nova rodada/i })).not.toBeInTheDocument();
     expect(props.estados?.qb).toBe("outra");
+  });
+
+  it("marcar a última quadra avisa que o território foi concluído", async () => {
+    await renderTela();
+
+    await act(async () => props.onQuadraClick?.("qc", { lng: -42, lat: -22 }));
+
+    expect(toastSuccess).toHaveBeenCalledWith(expect.stringMatching(/concluído/i));
+    expect(await screen.findByText(/3 de 3 quadras/i)).toBeInTheDocument();
+    expect(screen.getByText(/nova rodada em todos/i)).toBeInTheDocument();
   });
 
   it("conta as quadras feitas na rodada", async () => {

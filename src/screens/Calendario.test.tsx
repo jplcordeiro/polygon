@@ -79,7 +79,6 @@ function montar() {
 vi.mock("../lib/rodadas", async (orig) => ({
   ...(await (orig() as Promise<Record<string, unknown>>)),
   listRodadas: vi.fn().mockResolvedValue([]),
-  comecarRodada: vi.fn().mockResolvedValue(undefined),
   comecarRodadaEmTodos: vi.fn().mockResolvedValue(undefined),
 }));
 

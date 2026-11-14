@@ -12,7 +12,6 @@ import {
 } from "../lib/quadras";
 import {
   comRodada,
-  comecarRodada,
   comecarRodadaEmTodos,
   hojeISO,
   listRodadas,
@@ -48,7 +47,6 @@ export function Gestao() {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [paradas, setParadas] = useState<Parada[]>([]);
   const [rodadas, setRodadas] = useState<Rodada[]>([]);
-  const [ofertaRodada, setOfertaRodada] = useState<Territorio | null>(null);
   const [campanha, setCampanha] = useState(false);
   const [inicioCampanha, setInicioCampanha] = useState(hojeISO());
   const [nomeCampanha, setNomeCampanha] = useState("");
@@ -77,17 +75,6 @@ export function Gestao() {
   const abertaDe = (tid: string) => abertas.find((d) => d.territorio_id === tid);
   const nomePub = (pid: string) =>
     publicadores.find((p) => p.id === pid)?.nome ?? "?";
-
-  async function novaRodada(t: Territorio) {
-    setOfertaRodada(null);
-    try {
-      await comecarRodada(t.id);
-      toast.success(`Território Nº ${t.numero}: nova rodada começada.`);
-      carregar();
-    } catch {
-      toast.error("Não foi possível começar a nova rodada. Tente novamente.");
-    }
-  }
 
   async function novaCampanha() {
     setCampanha(false);
@@ -247,20 +234,11 @@ export function Gestao() {
                           await devolver(d.id);
                           toast.success(`Território Nº ${t.numero} devolvido.`);
                           await carregar();
-                          if (progresso.concluido) setOfertaRodada(t);
                         }}
                       >
                         Devolver
                       </Button>
                     )}
-
-                    <Button
-                      size="sm"
-                      variant={progresso.concluido ? "default" : "outline"}
-                      onClick={() => novaRodada(t)}
-                    >
-                      Começar nova rodada
-                    </Button>
 
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/cadastro/${t.id}`}>Editar</Link>
@@ -306,31 +284,6 @@ export function Gestao() {
           </ul>
         )}
       </section>
-
-      <AlertDialog
-        open={ofertaRodada !== null}
-        onOpenChange={(aberto) => !aberto && setOfertaRodada(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Território Nº {ofertaRodada?.numero} concluído. Começar nova rodada?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Todas as quadras foram feitas. Começar uma rodada nova zera a contagem
-              a partir de hoje — as marcas antigas continuam guardadas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Agora não</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => ofertaRodada && novaRodada(ofertaRodada)}
-            >
-              Começar nova rodada
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog open={campanha} onOpenChange={setCampanha}>
         <AlertDialogContent>
