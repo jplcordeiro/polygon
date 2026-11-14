@@ -25,6 +25,7 @@ export interface Publicador {
   nome: string;
   telefone: string | null;
   created_at: string;
+  user_id?: string | null;
 }
 
 export interface Designacao {

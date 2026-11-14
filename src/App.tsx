@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./auth/useSession";
 import { Login } from "./auth/Login";
 import { NovaSenha } from "./auth/NovaSenha";
-import { AdminContext, ehAdmin, inicioDe } from "./auth/papel";
+import { AdminContext, ContaContext, ehAdmin, inicioDe } from "./auth/papel";
 import { Gestao } from "./screens/Gestao";
 import { Cadastro } from "./screens/Cadastro";
 import { Campo } from "./screens/Campo";
@@ -11,6 +11,7 @@ import { MarcarQuadras } from "./screens/MarcarQuadras";
 import { Mapa } from "./screens/Mapa";
 import { Calendario } from "./screens/Calendario";
 import { Publicadores } from "./screens/Publicadores";
+import { Usuarios } from "./screens/Usuarios";
 import { LocatorSeal } from "./components/LocatorSeal";
 import { AppShell } from "./components/AppShell";
 
@@ -49,31 +50,34 @@ export default function App() {
   if (recuperando) return <NovaSenha onPronto={fimDaRecuperacao} />;
   if (admin === null) return <AppBoot />;
   return (
-    <AdminContext.Provider value={admin}>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route path="/mapa" element={<Mapa />} />
-          <Route path="/calendario" element={<Calendario />} />
+    <ContaContext.Provider value={session.user.id}>
+      <AdminContext.Provider value={admin}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/mapa" element={<Mapa />} />
+            <Route path="/calendario" element={<Calendario />} />
+            {admin && (
+              <>
+                <Route path="/" element={<Gestao />} />
+                <Route path="/publicadores" element={<Publicadores />} />
+                <Route path="/usuarios" element={<Usuarios />} />
+              </>
+            )}
+          </Route>
+          <Route path="/campo/:id" element={<Campo />} />
           {admin && (
             <>
-              <Route path="/" element={<Gestao />} />
-              <Route path="/publicadores" element={<Publicadores />} />
+              <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/cadastro/:id" element={<Cadastro />} />
+              <Route
+                path="/saida/:saidaId/territorio/:territorioId"
+                element={<MarcarQuadras />}
+              />
             </>
           )}
-        </Route>
-        <Route path="/campo/:id" element={<Campo />} />
-        {admin && (
-          <>
-            <Route path="/cadastro" element={<Cadastro />} />
-            <Route path="/cadastro/:id" element={<Cadastro />} />
-            <Route
-              path="/saida/:saidaId/territorio/:territorioId"
-              element={<MarcarQuadras />}
-            />
-          </>
-        )}
-        <Route path="*" element={<Navigate to={inicioDe(admin)} replace />} />
-      </Routes>
-    </AdminContext.Provider>
+          <Route path="*" element={<Navigate to={inicioDe(admin)} replace />} />
+        </Routes>
+      </AdminContext.Provider>
+    </ContaContext.Provider>
   );
 }

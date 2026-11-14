@@ -15,4 +15,8 @@ export const AdminContext = createContext(true);
 
 export const useAdmin = () => useContext(AdminContext);
 
+export const ContaContext = createContext<string | null>(null);
+
+export const useConta = () => useContext(ContaContext);
+
 export const inicioDe = (admin: boolean) => (admin ? "/" : "/mapa");

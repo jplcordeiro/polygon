@@ -24,7 +24,7 @@ import { listMarcas, marcasDaRodada, type Marca } from "../lib/quadras";
 import { comRodada, listRodadas } from "../lib/rodadas";
 import type { Rodada } from "../lib/types";
 import { listNomesPublicadores } from "../lib/publicadores";
-import { useAdmin } from "../auth/papel";
+import { useAdmin, useConta } from "../auth/papel";
 import { escalaDoMes } from "../lib/escala";
 import type { Publicador, Saida, Territorio } from "../lib/types";
 import { TerritorioGlyph } from "./TerritorioGlyph";
@@ -72,6 +72,7 @@ function hojeISO() {
 
 export function Calendario() {
   const admin = useAdmin();
+  const conta = useConta();
   const hoje = hojeISO();
   const [mes, setMes] = useState<Mes>(() => {
     const d = new Date();
@@ -115,6 +116,8 @@ export function Calendario() {
   }, [mes]);
 
   const territorioDe = (id: string) => territorios.find((t) => t.id === id);
+  const meuPublicador = publicadores.find((p) => conta && p.user_id === conta)?.id;
+  const ehMinha = (s: Saida) => !!meuPublicador && s.publicador_id === meuPublicador;
   const nomePub = (id: string | null) =>
     id ? (publicadores.find((p) => p.id === id)?.nome ?? "?") : null;
   const locais = locaisUsados(saidas);
@@ -449,7 +452,10 @@ export function Calendario() {
                       {saidasDoDia(saidas, data).map((s) => (
                         <li
                           key={s.id}
-                          className="flex items-center gap-3 border-t border-line px-3.5 py-3 first:border-0"
+                          className={cn(
+                            "flex items-center gap-3 border-t border-line px-3.5 py-3 first:border-0",
+                            ehMinha(s) && "border-l-4 border-l-jwblue bg-jwblue-wash",
+                          )}
                         >
                           <div className="grid min-w-0 flex-1 gap-0.5">
                             <Eyebrow s={s} />
@@ -467,6 +473,11 @@ export function Calendario() {
                               )}
                             >
                               {nomePub(s.publicador_id) ?? "dirigente a definir"}
+                              {ehMinha(s) && (
+                                <span className="ml-2 rounded bg-jwblue px-1.5 py-0.5 text-[0.7rem] font-semibold text-white">
+                                  você dirige
+                                </span>
+                              )}
                             </span>
                             {s.observacao && (
                               <span className="text-[0.78rem] italic text-ink-soft">

@@ -26,7 +26,7 @@ describe("AppShell", () => {
 
   it("admin vê todas as áreas", () => {
     expect(new Set(rotulos(true))).toEqual(
-      new Set(["Territórios", "Mapa", "Calendário", "Publicadores"]),
+      new Set(["Territórios", "Mapa", "Calendário", "Publicadores", "Usuários"]),
     );
   });
 });

@@ -53,7 +53,9 @@ vi.mock("../lib/territorios", async (orig) => {
 vi.mock("../lib/publicadores", () => ({
   listNomesPublicadores: vi
     .fn()
-    .mockResolvedValue([{ id: "p1", nome: "Kleber", telefone: null, created_at: "" }]),
+    .mockResolvedValue([
+      { id: "p1", nome: "Kleber", telefone: null, created_at: "", user_id: "conta-kleber" },
+    ]),
 }));
 vi.mock("../lib/quadras", async (orig) => {
   const actual = await (orig() as Promise<Record<string, unknown>>);
@@ -264,5 +266,32 @@ describe("usuário comum", () => {
     expect(screen.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /excluir/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Nº 6/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("minhas saídas", () => {
+  it("destaca a saída que a conta logada dirige", async () => {
+    const { ContaContext } = await import("../auth/papel");
+    render(
+      <ContaContext.Provider value="conta-kleber">
+        <MemoryRouter>
+          <Calendario />
+        </MemoryRouter>
+      </ContaContext.Provider>,
+    );
+    expect(await screen.findByText("você dirige")).toBeInTheDocument();
+  });
+
+  it("não destaca nada para quem não é o dirigente", async () => {
+    const { ContaContext } = await import("../auth/papel");
+    render(
+      <ContaContext.Provider value="outra-conta">
+        <MemoryRouter>
+          <Calendario />
+        </MemoryRouter>
+      </ContaContext.Provider>,
+    );
+    await waitFor(() => expect(screen.getAllByText("Gruta da Ilha").length).toBeGreaterThan(0));
+    expect(screen.queryByText("você dirige")).not.toBeInTheDocument();
   });
 });
