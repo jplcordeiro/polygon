@@ -51,7 +51,7 @@ vi.mock("../lib/territorios", async (orig) => {
   };
 });
 vi.mock("../lib/publicadores", () => ({
-  listPublicadores: vi
+  listNomesPublicadores: vi
     .fn()
     .mockResolvedValue([{ id: "p1", nome: "Kleber", telefone: null, created_at: "" }]),
 }));
@@ -238,5 +238,31 @@ describe("exportar a escala em PDF", () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Não foi possível gerar o PDF."),
     );
+  });
+});
+
+describe("usuário comum", () => {
+  it("vê as saídas sem nenhum controle de edição", async () => {
+    const { AdminContext } = await import("../auth/papel");
+    render(
+      <AdminContext.Provider value={false}>
+        <MemoryRouter>
+          <Calendario />
+        </MemoryRouter>
+      </AdminContext.Provider>,
+    );
+    await waitFor(() =>
+      expect(screen.getAllByText("Gruta da Ilha").length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByRole("button", { name: /adicionar saída/i })).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("Todos os domingos temos duas saídas.")).toHaveAttribute(
+      "readonly",
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Abrir saída de/ })[0]);
+    expect(await screen.findByText(/saída\(s\) neste dia/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /excluir/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Nº 6/ })).not.toBeInTheDocument();
   });
 });

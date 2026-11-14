@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useAdmin } from "../auth/papel";
 
 function HexIcon({ className }: { className?: string }) {
   return (
@@ -28,14 +29,20 @@ function HexIcon({ className }: { className?: string }) {
 }
 
 const AREAS = [
-  { to: "/", rotulo: "Territórios", Icone: HexIcon },
-  { to: "/mapa", rotulo: "Mapa", Icone: Map },
-  { to: "/calendario", rotulo: "Calendário", Icone: CalendarDays },
-  { to: "/publicadores", rotulo: "Publicadores", Icone: Users },
-  { to: "/relatorio", rotulo: "Relatório", Icone: FileText },
+  { to: "/", rotulo: "Territórios", Icone: HexIcon, soAdmin: true },
+  { to: "/mapa", rotulo: "Mapa", Icone: Map, soAdmin: false },
+  { to: "/calendario", rotulo: "Calendário", Icone: CalendarDays, soAdmin: false },
+  { to: "/publicadores", rotulo: "Publicadores", Icone: Users, soAdmin: true },
+  { to: "/relatorio", rotulo: "Relatório", Icone: FileText, soAdmin: true },
 ];
 
+function useAreas() {
+  const admin = useAdmin();
+  return AREAS.filter((a) => admin || !a.soAdmin);
+}
+
 function MenuLateral() {
+  const areas = useAreas();
   const [aberto, setAberto] = useState(false);
 
   return (
@@ -64,7 +71,7 @@ function MenuLateral() {
         </SheetHeader>
 
         <nav aria-label="Áreas" className="grid gap-1 p-3">
-          {AREAS.map(({ to, rotulo, Icone }) => (
+          {areas.map(({ to, rotulo, Icone }) => (
             <NavLink
               key={to}
               to={to}
@@ -101,6 +108,7 @@ function MenuLateral() {
 }
 
 export function AppShell() {
+  const areas = useAreas();
   return (
     <div data-casca className="flex h-dvh flex-col bg-paper">
       <header className="nao-imprime flex flex-none items-center gap-4 border-b border-line bg-white px-[clamp(14px,4vw,32px)] py-2.5">
@@ -114,7 +122,7 @@ export function AppShell() {
         </div>
 
         <nav aria-label="Áreas" className="ml-4 hidden md:flex md:items-center md:gap-1">
-          {AREAS.map(({ to, rotulo }) => (
+          {areas.map(({ to, rotulo }) => (
             <NavLink
               key={to}
               to={to}

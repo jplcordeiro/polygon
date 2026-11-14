@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./auth/useSession";
 import { Login } from "./auth/Login";
+import { AdminContext, ehAdmin, inicioDe } from "./auth/papel";
 import { Gestao } from "./screens/Gestao";
 import { Cadastro } from "./screens/Cadastro";
 import { Campo } from "./screens/Campo";
@@ -34,25 +36,44 @@ function AppBoot() {
 
 export default function App() {
   const { session, loading } = useSession();
+  const userId = session?.user.id;
+  const [admin, setAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setAdmin(null);
+    if (userId) ehAdmin(userId).then(setAdmin, () => setAdmin(false));
+  }, [userId]);
+
   if (loading) return <AppBoot />;
   if (!session) return <Login />;
+  if (admin === null) return <AppBoot />;
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<Gestao />} />
-        <Route path="/mapa" element={<Mapa />} />
-        <Route path="/calendario" element={<Calendario />} />
-        <Route path="/publicadores" element={<Publicadores />} />
-        <Route path="/relatorio" element={<Relatorio />} />
-      </Route>
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/cadastro/:id" element={<Cadastro />} />
-      <Route path="/campo/:id" element={<Campo />} />
-      <Route
-        path="/saida/:saidaId/territorio/:territorioId"
-        element={<MarcarQuadras />}
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AdminContext.Provider value={admin}>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/mapa" element={<Mapa />} />
+          <Route path="/calendario" element={<Calendario />} />
+          {admin && (
+            <>
+              <Route path="/" element={<Gestao />} />
+              <Route path="/publicadores" element={<Publicadores />} />
+              <Route path="/relatorio" element={<Relatorio />} />
+            </>
+          )}
+        </Route>
+        <Route path="/campo/:id" element={<Campo />} />
+        {admin && (
+          <>
+            <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/cadastro/:id" element={<Cadastro />} />
+            <Route
+              path="/saida/:saidaId/territorio/:territorioId"
+              element={<MarcarQuadras />}
+            />
+          </>
+        )}
+        <Route path="*" element={<Navigate to={inicioDe(admin)} replace />} />
+      </Routes>
+    </AdminContext.Provider>
   );
 }
