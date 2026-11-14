@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { saidasPorDirigente, Publicadores } from "./Publicadores";
+import { renomearPublicador } from "../lib/publicadores";
 import type { Saida } from "../lib/types";
 
 vi.mock("../lib/publicadores", () => ({
@@ -11,6 +12,7 @@ vi.mock("../lib/publicadores", () => ({
   ]),
   criarPublicador: vi.fn(),
   excluirPublicador: vi.fn(),
+  renomearPublicador: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../lib/territorios", async (orig) => {
   const actual = await (orig() as Promise<Record<string, unknown>>);
@@ -134,5 +136,27 @@ describe("Publicadores", () => {
     );
     await waitFor(() => expect(screen.getByText("Ana Ribeiro")).toBeInTheDocument());
     expect(screen.getByText("Sem saídas neste mês")).toBeInTheDocument();
+  });
+});
+
+describe("Publicadores — editar nome", () => {
+  it("salva o novo nome ao apertar Enter", async () => {
+    render(<MemoryRouter><Publicadores /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole("button", { name: "Editar nome de Ana Ribeiro" }));
+    const campo = screen.getByRole("textbox", { name: "Nome de Ana Ribeiro" });
+    fireEvent.change(campo, { target: { value: "  Ana Ribeiro Lima " } });
+    fireEvent.keyDown(campo, { key: "Enter" });
+    await waitFor(() => expect(renomearPublicador).toHaveBeenCalledWith("p2", "Ana Ribeiro Lima"));
+  });
+
+  it("Esc cancela sem salvar", async () => {
+    vi.mocked(renomearPublicador).mockClear();
+    render(<MemoryRouter><Publicadores /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole("button", { name: "Editar nome de Kleber Souza" }));
+    const campo = screen.getByRole("textbox", { name: "Nome de Kleber Souza" });
+    fireEvent.change(campo, { target: { value: "Outro" } });
+    fireEvent.keyDown(campo, { key: "Escape" });
+    expect(screen.queryByRole("textbox", { name: "Nome de Kleber Souza" })).toBeNull();
+    expect(renomearPublicador).not.toHaveBeenCalled();
   });
 });

@@ -21,15 +21,19 @@ export async function listNomesPublicadores(): Promise<Publicador[]> {
 
 export async function criarPublicador(input: {
   nome: string;
-  telefone?: string;
 }): Promise<Publicador> {
   const { data, error } = await supabase
     .from("publicador")
-    .insert({ nome: input.nome, telefone: input.telefone ?? null })
+    .insert({ nome: input.nome })
     .select()
     .single();
   if (error) throw error;
   return data as Publicador;
+}
+
+export async function renomearPublicador(id: string, nome: string): Promise<void> {
+  const { error } = await supabase.from("publicador").update({ nome }).eq("id", id);
+  if (error) throw error;
 }
 
 export async function excluirPublicador(id: string): Promise<void> {
