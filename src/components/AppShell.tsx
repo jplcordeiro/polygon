@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { CalendarDays, FileText, LogOut, Map, Menu, Users } from "lucide-react";
+import { CalendarDays, LogOut, Map, Menu, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +33,6 @@ const AREAS = [
   { to: "/mapa", rotulo: "Mapa", Icone: Map, soAdmin: false },
   { to: "/calendario", rotulo: "Calendário", Icone: CalendarDays, soAdmin: false },
   { to: "/publicadores", rotulo: "Publicadores", Icone: Users, soAdmin: true },
-  { to: "/relatorio", rotulo: "Relatório", Icone: FileText, soAdmin: true },
 ];
 
 function useAreas() {

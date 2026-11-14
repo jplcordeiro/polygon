@@ -1,8 +1,7 @@
 import { supabase, todasAsLinhas } from "./supabase";
 import { quadrasDe } from "./territorios";
-import { mesmoMes, type Mes } from "./saidas";
-import { comRodada, rodadasDe, type EmRodada } from "./rodadas";
-import type { Publicador, Rodada, Territorio } from "./types";
+import type { EmRodada } from "./rodadas";
+import type { Publicador } from "./types";
 
 export interface Marca {
   saida_id: string;
@@ -96,129 +95,6 @@ export function progressoDe(
   const feitas = quadrasFeitasDe(t, marcas).size;
   const emAndamento = paradaAtualDe(t, marcas, paradas).size;
   return { feitas, total, emAndamento, concluido: total > 0 && feitas === total };
-}
-
-export interface LinhaRelatorio {
-  territorio: EmRodada;
-  feitasNoMes: number;
-  total: number;
-  concluidoNoMes: boolean;
-}
-
-export interface PassagemMes {
-  saida_id: string;
-  data: string;
-  local: string | null;
-  quadras: number;
-}
-
-export function passagensDoMes(
-  t: Territorio,
-  m: Mes,
-  marcas: Marca[],
-): PassagemMes[] {
-  const existentes = new Set(quadrasDe(t.limites).map((q) => q.id));
-  const porSaida = new Map<string, PassagemMes & { vistas: Set<string> }>();
-
-  for (const mk of marcas) {
-    if (mk.territorio_id !== t.id) continue;
-    if (!existentes.has(mk.quadra_id)) continue;
-    if (!mesmoMes(mk.data, m)) continue;
-
-    const atual = porSaida.get(mk.saida_id) ?? {
-      saida_id: mk.saida_id,
-      data: mk.data,
-      local: mk.local,
-      quadras: 0,
-      vistas: new Set<string>(),
-    };
-    atual.vistas.add(mk.quadra_id);
-    atual.quadras = atual.vistas.size;
-    porSaida.set(mk.saida_id, atual);
-  }
-
-  return [...porSaida.values()]
-    .map(({ vistas: _vistas, ...passagem }) => passagem)
-    .sort((a, b) => a.data.localeCompare(b.data) || a.saida_id.localeCompare(b.saida_id));
-}
-
-export function fechamentosDe(
-  t: Territorio,
-  marcas: Marca[],
-  rodadas: Rodada[],
-): string[] {
-  const existentes = new Set(quadrasDe(t.limites).map((q) => q.id));
-  const total = existentes.size;
-  if (total === 0) return [];
-
-  const doTerritorio = marcas
-    .filter((m) => m.territorio_id === t.id && existentes.has(m.quadra_id))
-    .sort((a, b) => a.data.localeCompare(b.data));
-
-  const cortes = rodadasDe(t.id, rodadas).map((r) => r.inicio);
-  const fechamentos: string[] = [];
-  for (const [k, inicio] of [null, ...cortes].entries()) {
-    const fim = cortes[k] ?? null;
-    const vistas = new Set<string>();
-    for (const m of doTerritorio) {
-      if (inicio && m.data < inicio) continue;
-      if (fim && m.data >= fim) continue;
-      vistas.add(m.quadra_id);
-      if (vistas.size === total) {
-        fechamentos.push(m.data);
-        break;
-      }
-    }
-  }
-  return fechamentos;
-}
-
-export interface RelatorioMes {
-  linhas: LinhaRelatorio[];
-  totalQuadrasNoMes: number;
-  totalConcluidos: number;
-}
-
-export function relatorioDoMes(
-  m: Mes,
-  territorios: Territorio[],
-  marcas: Marca[],
-  rodadas: Rodada[] = [],
-): RelatorioMes {
-  const linhas: LinhaRelatorio[] = [];
-  for (const t of territorios) {
-    const existentes = new Set(quadrasDe(t.limites).map((q) => q.id));
-    const total = existentes.size;
-
-    const feitasNoMes = new Set(
-      marcas
-        .filter(
-          (mk) =>
-            mk.territorio_id === t.id &&
-            existentes.has(mk.quadra_id) &&
-            mesmoMes(mk.data, m),
-        )
-        .map((mk) => mk.quadra_id),
-    ).size;
-
-    const concluidoNoMes = fechamentosDe(t, marcas, rodadas).some((d) =>
-      mesmoMes(d, m),
-    );
-
-    if (feitasNoMes > 0 || concluidoNoMes) {
-      linhas.push({
-        territorio: comRodada(t, rodadas),
-        feitasNoMes,
-        total,
-        concluidoNoMes,
-      });
-    }
-  }
-  return {
-    linhas,
-    totalQuadrasNoMes: linhas.reduce((soma, l) => soma + l.feitasNoMes, 0),
-    totalConcluidos: linhas.filter((l) => l.concluidoNoMes).length,
-  };
 }
 
 type MarcaRow = Omit<Marca, "data" | "local" | "publicador_id">;

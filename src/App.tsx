@@ -10,7 +10,6 @@ import { MarcarQuadras } from "./screens/MarcarQuadras";
 import { Mapa } from "./screens/Mapa";
 import { Calendario } from "./screens/Calendario";
 import { Publicadores } from "./screens/Publicadores";
-import { Relatorio } from "./screens/Relatorio";
 import { LocatorSeal } from "./components/LocatorSeal";
 import { AppShell } from "./components/AppShell";
 
@@ -57,7 +56,6 @@ export default function App() {
             <>
               <Route path="/" element={<Gestao />} />
               <Route path="/publicadores" element={<Publicadores />} />
-              <Route path="/relatorio" element={<Relatorio />} />
             </>
           )}
         </Route>

@@ -3,12 +3,6 @@ import type { Rodada, Territorio } from "./types";
 
 export type EmRodada = Territorio & { inicio: string | null };
 
-export interface Campanha {
-  inicio: string;
-  nome: string | null;
-  territorio_ids: string[];
-}
-
 export function hojeISO(): string {
   const hoje = new Date();
   return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(
@@ -49,21 +43,6 @@ export function rodadaEm(
 
 export function comRodada(t: Territorio, rodadas: Rodada[]): EmRodada {
   return { ...t, inicio: inicioDaRodada(t.id, rodadas) };
-}
-
-export function campanhas(rodadas: Rodada[]): Campanha[] {
-  const porChave = new Map<string, Campanha>();
-  for (const r of rodadas) {
-    const chave = `${r.inicio}|${r.nome ?? ""}`;
-    const atual = porChave.get(chave) ?? {
-      inicio: r.inicio,
-      nome: r.nome,
-      territorio_ids: [],
-    };
-    atual.territorio_ids.push(r.territorio_id);
-    porChave.set(chave, atual);
-  }
-  return [...porChave.values()].sort((a, b) => b.inicio.localeCompare(a.inicio));
 }
 
 export async function listRodadas(): Promise<Rodada[]> {
