@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
-import { listPublicadores, criarPublicador, excluirPublicador } from "../lib/publicadores";
+import { Check, Pencil, Search, X } from "lucide-react";
+import {
+  listPublicadores,
+  criarPublicador,
+  excluirPublicador,
+  renomearPublicador,
+} from "../lib/publicadores";
 import { listTerritorios } from "../lib/territorios";
 import { listSaidas, iso, diaDaSemana, DIA_SEMANA, MES_NOME } from "../lib/saidas";
 import type { Publicador, Saida, Territorio } from "../lib/types";
@@ -35,13 +40,6 @@ export function saidasPorDirigente(saidas: Saida[]): Map<string, Saida[]> {
   return grupos;
 }
 
-function formatTelefone(tel: string) {
-  const d = tel.replace(/\D/g, "");
-  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return tel;
-}
-
 function semAcento(texto: string) {
   return texto
     .normalize("NFD")
@@ -59,8 +57,8 @@ export function Publicadores() {
   const [territorios, setTerritorios] = useState<Territorio[]>([]);
   const [saidas, setSaidas] = useState<Saida[]>([]);
   const [novoNome, setNovoNome] = useState("");
-  const [novoTel, setNovoTel] = useState("");
   const [busca, setBusca] = useState("");
+  const [editando, setEditando] = useState<{ id: string; nome: string } | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   const hoje = new Date();
@@ -93,10 +91,24 @@ export function Publicadores() {
 
   async function adicionar() {
     if (!novoNome) return;
-    await criarPublicador({ nome: novoNome, telefone: novoTel || undefined });
+    await criarPublicador({ nome: novoNome });
     setNovoNome("");
-    setNovoTel("");
     carregar();
+  }
+
+  async function salvarNome() {
+    if (!editando) return;
+    const nome = editando.nome.trim();
+    const atual = publicadores.find((p) => p.id === editando.id);
+    setEditando(null);
+    if (!nome || nome === atual?.nome) return;
+    try {
+      await renomearPublicador(editando.id, nome);
+      toast.success(`Nome alterado para ${nome}.`);
+      carregar();
+    } catch {
+      toast.error("Não foi possível alterar o nome. Tente novamente.");
+    }
   }
 
   async function excluir(p: Publicador) {
@@ -133,12 +145,6 @@ export function Publicadores() {
           placeholder="Nome*"
           value={novoNome}
           onChange={(e) => setNovoNome(e.target.value)}
-        />
-        <Input
-          className="flex-1 basis-40"
-          placeholder="Telefone"
-          value={novoTel}
-          onChange={(e) => setNovoTel(e.target.value)}
         />
         <Button onClick={adicionar} disabled={!novoNome}>
           Adicionar
@@ -192,13 +198,52 @@ export function Publicadores() {
                 className="grid gap-3 rounded-xl border border-line bg-white px-4 py-3.5 shadow-card"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-medium text-ink">{p.nome}</span>
-                  {p.telefone && (
-                    <span className="font-mono text-[0.8rem] tabular-nums text-ink-soft">
-                      {formatTelefone(p.telefone)}
-                    </span>
+                  {editando?.id === p.id ? (
+                    <form
+                      className="flex flex-1 items-center gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        salvarNome();
+                      }}
+                    >
+                      <Input
+                        autoFocus
+                        aria-label={`Nome de ${p.nome}`}
+                        className="h-9 flex-1"
+                        value={editando.nome}
+                        onChange={(e) => setEditando({ id: p.id, nome: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditando(null);
+                        }}
+                      />
+                      <Button type="submit" size="icon" aria-label="Confirmar nome" className="size-9 flex-none">
+                        <Check aria-hidden="true" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Cancelar edição"
+                        className="size-9 flex-none text-ink-soft"
+                        onClick={() => setEditando(null)}
+                      >
+                        <X aria-hidden="true" />
+                      </Button>
+                    </form>
+                  ) : (
+                    <>
+                      <span className="font-medium text-ink">{p.nome}</span>
+                      <button
+                        type="button"
+                        aria-label={`Editar nome de ${p.nome}`}
+                        onClick={() => setEditando({ id: p.id, nome: p.nome })}
+                        className="grid size-6 flex-none place-items-center rounded-full text-ink-faint transition-colors hover:bg-jwblue-wash hover:text-jwblue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jwblue"
+                      >
+                        <Pencil className="size-3.5" aria-hidden="true" />
+                      </button>
+                      <span className="flex-1" />
+                    </>
                   )}
-                  <span className="flex-1" />
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button
