@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BaseMap } from "../map/BaseMap";
 import { TerritorioPolygon, type EstadoQuadra } from "../map/TerritorioPolygon";
@@ -21,6 +21,9 @@ import { RadarLoader } from "../components/RadarLoader";
 
 export function Campo() {
   const admin = useAdmin();
+  const doCalendario = useLocation().state?.voltar === "calendario";
+  const voltarPara = doCalendario ? "/calendario" : inicioDe(admin);
+  const voltarRotulo = doCalendario ? "Calendário" : admin ? "Territórios" : "Mapa";
   const { id } = useParams();
   const [t, setT] = useState<Territorio | null>(null);
   const [marcas, setMarcas] = useState<Marca[]>([]);
@@ -76,8 +79,8 @@ export function Campo() {
             </p>
           </div>
           <Button asChild>
-            <Link to={inicioDe(admin)}>
-              {admin ? "Voltar aos territórios" : "Voltar ao mapa"}
+            <Link to={voltarPara}>
+              {doCalendario ? "Voltar ao calendário" : admin ? "Voltar aos territórios" : "Voltar ao mapa"}
             </Link>
           </Button>
         </div>
@@ -112,11 +115,11 @@ export function Campo() {
       </BaseMap>
 
       <Link
-        to={inicioDe(admin)}
+        to={voltarPara}
         className="absolute left-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white/90 px-2.5 text-[0.85rem] font-medium text-ink shadow-card backdrop-blur transition-colors hover:text-jwblue"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        {admin ? "Territórios" : "Mapa"}
+        {voltarRotulo}
       </Link>
     </div>
   );

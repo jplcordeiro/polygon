@@ -197,6 +197,7 @@ export function Calendario() {
               <Link
                 key={id}
                 to={`/campo/${t.id}`}
+                state={{ voltar: "calendario" }}
                 className="rounded bg-white/75 px-1.5 font-escala-mono text-[0.72rem] font-medium tabular-nums text-jwblue-deep transition-colors hover:bg-white"
                 title={`Abrir o mapa do território ${t.numero}`}
               >
@@ -216,6 +217,7 @@ export function Calendario() {
             <Link
               key={id}
               to={`/campo/${t.id}`}
+                state={{ voltar: "calendario" }}
               aria-label={`Abrir o mapa do território ${t.numero}`}
               className="grid w-9 justify-items-center gap-0.5 text-jwblue"
             >
@@ -272,6 +274,37 @@ export function Calendario() {
       <span className="font-escala-mono text-[0.66rem] font-medium uppercase tracking-[0.06em] text-ink-faint">
         tarde
       </span>
+    );
+  }
+
+  function ResumoSaida({ s, className }: { s: Saida; className: string }) {
+    return (
+    <div
+      className={cn("grid content-start gap-0.5 border-white/70 leading-[1.2] first:border-0", className)}
+    >
+      <Eyebrow s={s} />
+      {s.local && (
+        <span className="text-[0.86rem] font-bold leading-[1.15] tracking-[-0.005em] text-jwblue-deep">
+          {s.local}
+        </span>
+      )}
+      <span
+        className={cn(
+          "text-[0.76rem]",
+          s.publicador_id
+            ? "font-medium text-ink"
+            : "italic text-ocre",
+        )}
+      >
+        {nomePub(s.publicador_id) ?? "a definir"}
+      </span>
+      <Territorios s={s} tamanho="texto" />
+      {s.observacao && (
+        <span className="text-[0.7rem] italic text-ink-soft">
+          {s.observacao}
+        </span>
+      )}
+    </div>
     );
   }
 
@@ -333,20 +366,17 @@ export function Calendario() {
         />
       ) : (
         <>
-          <div className="hidden grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line font-escala shadow-card sm:grid">
-            {ABREV_DIA.map((d, i) => (
+          <div className="hidden grid-cols-6 gap-px overflow-hidden rounded-xl border border-line bg-line font-escala shadow-card sm:grid">
+            {ABREV_DIA.slice(1).map((d) => (
               <div
                 key={d}
-                className={cn(
-                  "bg-white px-2 py-1.5 text-center text-[0.68rem] font-bold uppercase tracking-[0.12em]",
-                  i === 0 ? "text-ocre" : "text-ink-soft",
-                )}
+                className="bg-white px-2 py-1.5 text-center text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ink-soft"
               >
                 {d}
               </div>
             ))}
 
-            {grade.map((data) => {
+            {grade.filter((data) => diaDaSemana(data) !== 0).map((data) => {
               const dow = diaDaSemana(data);
               if (!mesmoMes(data, mes))
                 return <div key={data} className="min-h-30 bg-mist" />;
@@ -379,39 +409,67 @@ export function Calendario() {
 
                   <div className="pointer-events-none relative grid gap-1.5 px-1.5 pb-1.5 text-center">
                     {doDia.map((s) => (
-                      <div
-                        key={s.id}
-                        className="grid gap-0.5 border-t border-white/70 pt-1.5 leading-[1.2] first:border-0 first:pt-0"
-                      >
-                        <Eyebrow s={s} />
-                        {s.local && (
-                          <span className="text-[0.86rem] font-bold leading-[1.15] tracking-[-0.005em] text-jwblue-deep">
-                            {s.local}
-                          </span>
-                        )}
-                        <span
-                          className={cn(
-                            "text-[0.76rem]",
-                            s.publicador_id
-                              ? "font-medium text-ink"
-                              : "italic text-ocre",
-                          )}
-                        >
-                          {nomePub(s.publicador_id) ?? "a definir"}
-                        </span>
-                        <Territorios s={s} tamanho="texto" />
-                        {s.observacao && (
-                          <span className="text-[0.7rem] italic text-ink-soft">
-                            {s.observacao}
-                          </span>
-                        )}
-                      </div>
+                      <ResumoSaida key={s.id} s={s} className="border-t pt-1.5 first:pt-0" />
                     ))}
                   </div>
                 </div>
               );
             })}
           </div>
+
+          <section
+            aria-labelledby="domingos"
+            className="hidden overflow-hidden rounded-xl border border-line bg-line font-escala shadow-card sm:grid sm:gap-px"
+          >
+            <h2
+              id="domingos"
+              className="bg-white px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ocre"
+            >
+              Domingos
+            </h2>
+            {grade
+              .filter((data) => diaDaSemana(data) === 0 && mesmoMes(data, mes))
+              .map((data) => {
+                const doDia = saidasDoDia(saidas, data);
+                const ehHoje = data === hoje;
+                return (
+                  <div
+                    key={data}
+                    className={cn(
+                      "relative flex items-stretch",
+                      WASH[0],
+                      ehHoje && "ring-2 ring-inset ring-jwblue",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="nao-imprime absolute inset-0 cursor-pointer"
+                      aria-label={`Saídas de ${diaDe(data)} de ${MES_NOME[Number(data.split("-")[1]) - 1]}`}
+                      onClick={() => setDiaAberto(data)}
+                    />
+                    <span
+                      className={cn(
+                        "pointer-events-none relative grid w-16 flex-none place-items-center border-r border-white/70 font-escala-mono text-2xl font-bold tabular-nums",
+                        ehHoje ? "text-jwblue-deep" : "text-ocre",
+                      )}
+                    >
+                      {diaDe(data)}
+                    </span>
+                    <div className="pointer-events-none relative grid flex-1 grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-x-3 gap-y-2 px-3 py-2.5 text-center">
+                      {doDia.length === 0 ? (
+                        <span className="self-center text-left text-[0.76rem] italic text-ink-soft">
+                          Sem saídas
+                        </span>
+                      ) : (
+                        doDia.map((s) => (
+                          <ResumoSaida key={s.id} s={s} className="border-l pl-3 first:pl-0" />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </section>
 
           <ol className="grid gap-2.5 font-escala sm:hidden">
             {diasComSaida.length === 0 ? (

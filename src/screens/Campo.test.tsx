@@ -95,6 +95,20 @@ vi.mock("../lib/rodadas", async (orig) => ({
 }));
 
 describe("Campo", () => {
+  it("volta ao calendário quando veio de lá", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[{ pathname: "/campo/t1", state: { voltar: "calendario" } }]}
+      >
+        <Routes>
+          <Route path="/campo/:id" element={<Campo />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const link = await screen.findByRole("link", { name: /calendário/i });
+    expect(link).toHaveAttribute("href", "/calendario");
+  });
+
   it("renderiza o polígono do território pedido", async () => {
     render(
       <MemoryRouter initialEntries={["/campo/t1"]}>
