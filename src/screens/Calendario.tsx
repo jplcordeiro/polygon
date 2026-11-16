@@ -197,6 +197,7 @@ export function Calendario() {
               <Link
                 key={id}
                 to={`/campo/${t.id}`}
+                state={{ voltar: "calendario" }}
                 className="rounded bg-white/75 px-1.5 font-escala-mono text-[0.72rem] font-medium tabular-nums text-jwblue-deep transition-colors hover:bg-white"
                 title={`Abrir o mapa do território ${t.numero}`}
               >
@@ -216,6 +217,7 @@ export function Calendario() {
             <Link
               key={id}
               to={`/campo/${t.id}`}
+                state={{ voltar: "calendario" }}
               aria-label={`Abrir o mapa do território ${t.numero}`}
               className="grid w-9 justify-items-center gap-0.5 text-jwblue"
             >
